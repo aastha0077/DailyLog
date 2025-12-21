@@ -1,0 +1,32 @@
+# Build outputs
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.userprefs
+
+# Rider / VS Code / IDE files
+.idea/
+.vscode/
+*.sln.DotSettings
+
+# macOS system files
+.DS_Store
+
+# NuGet packages
+*.nupkg
+*.snupkg
+packages/
+
+# Temporary files
+*.log
+*.tmp
+*.temp
+
+# MAUI specific
+*.pdb
+*.mdb
+*.dbmdl
+*.vs/
