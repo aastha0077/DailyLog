@@ -1,0 +1,164 @@
+@page "/timeline"
+@inject JournalService JournalService
+@inject NavigationManager Navigation
+
+<PageTitle>Timeline - My Journals</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h2 mb-0">📅 Timeline</h1>
+                <div class="d-flex align-items-center gap-3">
+                    <nav aria-label="Timeline pagination">
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item @(currentPage == 0 ? "disabled" : "")">
+                                <button class="page-link" @onclick="PreviousPage" disabled="@(currentPage == 0)">Previous</button>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">Page @(currentPage + 1) of @totalPages</span>
+                            </li>
+                            <li class="page-item @(currentPage >= totalPages - 1 ? "disabled" : "")">
+                                <button class="page-link" @onclick="NextPage" disabled="@(currentPage >= totalPages - 1)">Next</button>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else if (!entries.Any())
+    {
+        <div class="row">
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <i class="bi bi-journal-x display-1 text-muted"></i>
+                    </div>
+                    <h3 class="text-muted mb-3">No journal entries found</h3>
+                    <p class="text-muted mb-4">Start writing to see your entries here!</p>
+                    <button class="btn btn-primary btn-lg" @onclick='() => Navigation.NavigateTo("/entry")'>
+                        <i class="bi bi-plus-circle me-2"></i>Create Your First Entry
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var entry in entries)
+            {
+                <div class="col-12 mb-3">
+                    <div class="card shadow-sm" style="cursor: pointer;" @onclick="() => NavigateToEntry(entry)">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <small class="text-primary fw-semibold">@entry.EntryDate.ToString("MMMM dd, yyyy")</small>
+                                <small class="text-muted">@entry.UpdatedAt.ToString("MMM dd, HH:mm")</small>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(entry.Title))
+                            {
+                                <h5 class="card-title mb-2">@entry.Title</h5>
+                            }
+
+                            <p class="card-text text-muted mb-3">@GetPreview(entry.Content)</p>
+
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex gap-2">
+                                    <small class="badge bg-light text-dark">@entry.WordCount words</small>
+                                    @if (!string.IsNullOrEmpty(entry.Category))
+                                    {
+                                        <small class="badge bg-secondary">@entry.Category</small>
+                                    }
+                                </div>
+                                <small class="text-muted">Click to view</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<JournalEntry> entries = new();
+    private int currentPage = 0;
+    private int pageSize = 10;
+    private int totalPages = 1;
+    private int totalEntries = 0;
+    private bool isLoading = true;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEntries();
+    }
+    
+    private async Task LoadEntries()
+    {
+        isLoading = true;
+        try
+        {
+            totalEntries = await JournalService.GetTotalEntryCountAsync();
+            totalPages = (int)Math.Ceiling((double)totalEntries / pageSize);
+            if (totalPages == 0) totalPages = 1;
+            
+            entries = await JournalService.GetPaginatedEntriesAsync(currentPage, pageSize);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading entries: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+    
+    private async Task NextPage()
+    {
+        if (currentPage < totalPages - 1)
+        {
+            currentPage++;
+            await LoadEntries();
+        }
+    }
+    
+    private async Task PreviousPage()
+    {
+        if (currentPage > 0)
+        {
+            currentPage--;
+            await LoadEntries();
+        }
+    }
+    
+    private void NavigateToEntry(JournalEntry entry)
+    {
+        Navigation.NavigateTo($"/entry/{entry.EntryDate:yyyy-MM-dd}");
+    }
+    
+    private string GetPreview(string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return "No content";
+        
+        var preview = content.Length > 200 ? content.Substring(0, 200) + "..." : content;
+        return preview.Replace("\n", " ");
+    }
+}
+

@@ -1,0 +1,261 @@
+@page "/dashboard"
+@inject AnalyticsService AnalyticsService
+@inject SecurityService SecurityService
+@inject NavigationManager Navigation
+
+<PageTitle>Dashboard - My Journals</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center bg-white p-4 rounded shadow-sm">
+                <div>
+                    <h1 class="h2 mb-1">📊 Dashboard</h1>
+                    <p class="text-muted mb-0">Welcome back! Here's your journaling overview.</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary" @onclick='() => Navigation.NavigateTo("/entry")'>
+                        <i class="me-1">✍️</i>Write Today
+                    </button>
+                    <button class="btn btn-outline-secondary" @onclick="RefreshData">
+                        <i class="me-1">🔄</i>Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    @if (isLoading)
+    {
+        <div class="loading">Loading analytics...</div>
+    }
+    else
+    {
+    <div class="row">
+        <!-- Streak Section -->
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title d-flex align-items-center">
+                        <span class="me-2">🔥</span>Journaling Streaks
+                    </h5>
+                    <div class="row g-3">
+                        <div class="col-4">
+                            <div class="text-center p-3 bg-light rounded">
+                                <div class="h4 mb-1 text-primary">@streakInfo.CurrentStreak</div>
+                                <small class="text-muted">Current</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="text-center p-3 bg-light rounded">
+                                <div class="h4 mb-1 text-success">@streakInfo.LongestStreak</div>
+                                <small class="text-muted">Longest</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="text-center p-3 bg-light rounded">
+                                <div class="h4 mb-1 text-warning">@streakInfo.MissedDays.Count</div>
+                                <small class="text-muted">Missed</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mood Distribution -->
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title d-flex align-items-center">
+                        <span class="me-2">😊</span>Mood Distribution
+                    </h5>
+                    @if (moodDistribution.Any())
+                    {
+                        @foreach (var mood in moodDistribution)
+                        {
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <small class="fw-semibold">@mood.Category</small>
+                                    <small class="text-muted">@mood.Percentage.ToString("F1")%</small>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-@GetBootstrapColor(mood.Category)" role="progressbar"
+                                         style="width: @(mood.Percentage)%" aria-valuenow="@mood.Percentage" aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+                                <small class="text-muted">@mood.Count entries</small>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">No mood data available</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Most Frequent Mood & Tags -->
+        @if (mostFrequentMood.HasValue)
+        {
+            <div class="col-lg-6 col-xl-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title d-flex align-items-center">
+                            <span class="me-2">⭐</span>Most Frequent Mood
+                        </h5>
+                        <div class="text-center py-3">
+                            <span class="badge bg-primary fs-6 px-3 py-2">@mostFrequentMood.Value.ToString()</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title d-flex align-items-center">
+                        <span class="me-2">🏷️</span>Most Used Tags
+                    </h5>
+                    @if (mostUsedTags.Any())
+                    {
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach (var tag in mostUsedTags.Take(8))
+                            {
+                                <span class="badge bg-secondary">@tag.Tag <span class="ms-1">@tag.Count</span></span>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">No tags used yet</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Word Count Trends -->
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title d-flex align-items-center">
+                        <span class="me-2">📈</span>Word Count Trends
+                    </h5>
+                    @if (wordCountTrends.Any())
+                    {
+                        var avgWords = wordCountTrends.Last().AverageWordCount;
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="text-center p-3 bg-light rounded">
+                                    <div class="h5 mb-1 text-info">@avgWords.ToString("F0")</div>
+                                    <small class="text-muted">Avg Words</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-center p-3 bg-light rounded">
+                                    <div class="h5 mb-1 text-primary">@wordCountTrends.Count</div>
+                                    <small class="text-muted">Total Entries</small>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">No entries yet. Start journaling to see trends!</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+</div>
+
+@code {
+    private StreakInfo streakInfo = new();
+    private List<MoodDistribution> moodDistribution = new();
+    private MoodType? mostFrequentMood;
+    private List<TagUsage> mostUsedTags = new();
+    private List<WordCountTrend> wordCountTrends = new();
+    private bool isLoading = true;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Console.WriteLine("Dashboard page initialized");
+            await CheckAuthentication();
+            await LoadDashboardData();
+            Console.WriteLine("Dashboard data loaded successfully");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Dashboard initialization error: {ex.Message}");
+            // Continue with empty state
+        }
+    }
+    
+    private async Task CheckAuthentication()
+    {
+        try
+        {
+            var isProtected = await SecurityService.IsProtectedAsync();
+            if (isProtected)
+            {
+                Console.WriteLine("App is protected, redirecting to login");
+                Navigation.NavigateTo("/login");
+                return;
+            }
+            Console.WriteLine("App is not protected, proceeding to dashboard");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Authentication check failed: {ex.Message}");
+            // If we can't check protection, assume not protected to avoid blocking
+        }
+    }
+    
+    private async Task LoadDashboardData()
+    {
+        isLoading = true;
+        try
+        {
+            streakInfo = await AnalyticsService.GetStreakInfoAsync();
+            moodDistribution = await AnalyticsService.GetMoodDistributionAsync();
+            mostFrequentMood = await AnalyticsService.GetMostFrequentMoodAsync();
+            mostUsedTags = await AnalyticsService.GetMostUsedTagsAsync(10);
+            wordCountTrends = await AnalyticsService.GetWordCountTrendsAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading dashboard: {ex.Message}");
+            // Set default values if analytics fail
+            streakInfo = new StreakInfo { CurrentStreak = 0, LongestStreak = 0, MissedDays = new List<DateTime>() };
+            moodDistribution = new List<MoodDistribution>();
+            mostUsedTags = new List<TagUsage>();
+            wordCountTrends = new List<WordCountTrend>();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+    
+    private async Task RefreshData()
+    {
+        await LoadDashboardData();
+    }
+
+    private string GetBootstrapColor(MoodCategory category)
+    {
+        return category switch
+        {
+            MoodCategory.Positive => "success",
+            MoodCategory.Neutral => "warning",
+            MoodCategory.Negative => "danger",
+            _ => "secondary"
+        };
+    }
+
+}

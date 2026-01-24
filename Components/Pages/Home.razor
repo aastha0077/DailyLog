@@ -1,5 +1,26 @@
-﻿@page "/"
+@page "/"
+@inject NavigationManager Navigation
 
-<h1>Hello, world!</h1>
+<PageTitle>My Journals</PageTitle>
 
-Welcome to your new app.
+<div class="welcome-screen">
+    <div class="welcome-content">
+        <div class="welcome-header">
+            <div class="welcome-icon">📖</div>
+            <h1>My Journals</h1>
+            <p>Loading...</p>
+        </div>
+
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+        </div>
+    </div>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Console.WriteLine("Home page initialized, redirecting to startup for initialization");
+        Navigation.NavigateTo("/startup");
+    }
+}

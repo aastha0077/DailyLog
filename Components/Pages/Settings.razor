@@ -1,0 +1,163 @@
+@page "/settings"
+@inject SecurityService SecurityService
+@inject NavigationManager Navigation
+
+<PageTitle>Settings - My Journals</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex align-items-center mb-4">
+                <button type="button" class="btn btn-outline-secondary me-3" @onclick='() => Navigation.NavigateTo("/dashboard")'>
+                    ← Back
+                </button>
+                <h1 class="mb-0">Settings</h1>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h2 class="h5 mb-0">Security & Privacy</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5>PIN Protection</h5>
+                            <p class="text-muted mb-0">Protect your journal with a 6-digit PIN</p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            @if (userSettings.IsProtected)
+                            {
+                                <button class="btn btn-outline-primary me-2" @onclick="ShowChangePIN">Change PIN</button>
+                                <button class="btn btn-outline-danger" @onclick="DisableProtection">Disable</button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-primary" @onclick="ShowSetPIN">Set PIN</button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if (showPINDialog)
+            {
+                <div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.5);" @onclick="ClosePINDialog">
+                    <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">@(userSettings.IsProtected ? "Change PIN" : "Set PIN")</h5>
+                                <button type="button" class="btn-close" @onclick="ClosePINDialog"></button>
+                            </div>
+                            <div class="modal-body">
+                                @if (!string.IsNullOrEmpty(pinError))
+                                {
+                                    <div class="alert alert-danger">@pinError</div>
+                                }
+
+                                <div class="mb-3">
+                                    <label class="form-label">@(userSettings.IsProtected ? "New " : "")PIN (6 digits)</label>
+                                    <input type="password" class="form-control" @bind="newPIN" maxlength="6" placeholder="Enter 6-digit PIN" />
+                                </div>
+
+                                @if (userSettings.IsProtected)
+                                {
+                                    <div class="mb-3">
+                                        <label class="form-label">Confirm New PIN</label>
+                                        <input type="password" class="form-control" @bind="confirmPIN" maxlength="6" placeholder="Confirm PIN" />
+                                    </div>
+                                }
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" @onclick="ClosePINDialog">Cancel</button>
+                                <button type="button" class="btn btn-primary" @onclick="SavePIN">Save</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        </div>
+    </div>
+
+@code {
+    private UserSettings userSettings = new();
+    private bool showPINDialog = false;
+    private string newPIN = string.Empty;
+    private string confirmPIN = string.Empty;
+    private string pinError = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userSettings = await SecurityService.GetUserSettingsAsync();
+    }
+
+    private void ShowSetPIN()
+    {
+        showPINDialog = true;
+        newPIN = string.Empty;
+        confirmPIN = string.Empty;
+        pinError = string.Empty;
+    }
+
+    private void ShowChangePIN()
+    {
+        ShowSetPIN();
+    }
+
+    private void ClosePINDialog()
+    {
+        showPINDialog = false;
+        pinError = string.Empty;
+        newPIN = string.Empty;
+        confirmPIN = string.Empty;
+    }
+
+    private async Task SavePIN()
+    {
+        pinError = string.Empty;
+
+        if (string.IsNullOrEmpty(newPIN) || newPIN.Length != 6 || !int.TryParse(newPIN, out _))
+        {
+            pinError = "PIN must be exactly 6 digits.";
+            return;
+        }
+
+        if (userSettings.IsProtected && newPIN != confirmPIN)
+        {
+            pinError = "PINs do not match.";
+            return;
+        }
+
+        try
+        {
+            await SecurityService.SetPINAsync(newPIN);
+            showPINDialog = false;
+            userSettings = await SecurityService.GetUserSettingsAsync();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            pinError = $"Failed to save PIN: {ex.Message}";
+        }
+    }
+
+    private async Task DisableProtection()
+    {
+        try
+        {
+            await SecurityService.DisableProtectionAsync();
+            userSettings = await SecurityService.GetUserSettingsAsync();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            pinError = $"Failed to disable protection: {ex.Message}";
+        }
+    }
+}
+

@@ -1,27 +1,55 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">MyJournals</a>
+<!-- Modern Bootstrap Navbar -->
+<div class="p-4 bg-white border-bottom">
+    <div class="d-flex align-items-center mb-4">
+        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+            <i class="bi bi-journal-bookmark-fill text-white fs-4"></i>
+        </div>
+        <div>
+            <h5 class="mb-0 fw-bold text-dark">MyJournals</h5>
+            <small class="text-muted">Digital Journal</small>
+        </div>
     </div>
-</div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler"/>
+    <nav class="nav nav-pills flex-column gap-2">
+        <a class="nav-link d-flex align-items-center @GetActiveClass("/dashboard")" href="/dashboard">
+            <i class="bi bi-speedometer2 me-3 fs-5"></i>
+            <span class="fw-medium">Dashboard</span>
+        </a>
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
+        <a class="nav-link d-flex align-items-center @GetActiveClass("/entry")" href="/entry">
+            <i class="bi bi-pencil-square me-3 fs-5"></i>
+            <span class="fw-medium">Write Entry</span>
+        </a>
+
+        <a class="nav-link d-flex align-items-center @GetActiveClass("/timeline")" href="/timeline">
+            <i class="bi bi-graph-up me-3 fs-5"></i>
+            <span class="fw-medium">Timeline</span>
+        </a>
+
+        <a class="nav-link d-flex align-items-center @GetActiveClass("/calendar")" href="/calendar">
+            <i class="bi bi-calendar-date me-3 fs-5"></i>
+            <span class="fw-medium">Calendar</span>
+        </a>
+
+        <a class="nav-link d-flex align-items-center @GetActiveClass("/search")" href="/search">
+            <i class="bi bi-search me-3 fs-5"></i>
+            <span class="fw-medium">Search</span>
+        </a>
+
+        <hr class="my-3">
+
+        <a class="nav-link d-flex align-items-center @GetActiveClass("/settings")" href="/settings">
+            <i class="bi bi-gear me-3 fs-5"></i>
+            <span class="fw-medium">Settings</span>
+        </a>
     </nav>
 </div>
+
+@inject NavigationManager NavigationManager
+
+@code {
+    private string GetActiveClass(string href)
+    {
+        return NavigationManager.Uri.Contains(href) ? "active bg-primary text-white" : "text-dark";
+    }
+}

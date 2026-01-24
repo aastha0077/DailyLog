@@ -1,0 +1,120 @@
+@page "/startup"
+@inject AppDatabase Database
+@inject NavigationManager Navigation
+@inject SecurityService SecurityService
+
+<PageTitle>My Journals - Starting Up</PageTitle>
+
+<div class="startup-screen">
+    <div class="startup-content">
+        <div class="startup-header">
+            <div class="startup-icon">📖</div>
+            <h1>My Journals</h1>
+            <p>@statusMessage</p>
+        </div>
+
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="error-container">
+                <div class="error-message">
+                    <strong>⚠️ Error:</strong> @errorMessage
+                </div>
+                <button class="btn btn-primary" @onclick="RetryInitialization">
+                    Retry
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private string statusMessage = "Initializing your journal...";
+    private string errorMessage = string.Empty;
+    private bool isInitializing = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await InitializeApp();
+    }
+
+    private async Task InitializeApp()
+    {
+        errorMessage = string.Empty;
+        isInitializing = true;
+
+        try
+        {
+            Console.WriteLine("Startup: Beginning initialization...");
+            
+            statusMessage = "Setting up database...";
+            await Task.Delay(100); // Allow UI to update
+            StateHasChanged();
+
+            Console.WriteLine("Startup: Initializing database...");
+            
+            // Ensure database is initialized
+            if (Database == null)
+            {
+                throw new Exception("Database service is not available. Please restart the application.");
+            }
+            
+            await Database.InitializeAsync();
+            Console.WriteLine("Startup: Database initialized successfully");
+
+            statusMessage = "Verifying database...";
+            await Task.Delay(100);
+            StateHasChanged();
+
+            // Verify database status
+            Console.WriteLine("Startup: Verifying database status...");
+            var status = await Database.GetDatabaseStatusAsync();
+            Console.WriteLine($"Startup: Database status - Valid: {status?.IsValid ?? false}");
+            
+            if (status == null || !status.IsValid)
+            {
+                var errMsg = status?.ErrorMessage ?? "Unknown error";
+                throw new Exception($"Database validation failed: {errMsg}");
+            }
+
+            statusMessage = "Checking security settings...";
+            await Task.Delay(100);
+            StateHasChanged();
+            Console.WriteLine("Startup: Checking security settings...");
+
+            // Check if app is password protected
+            bool isProtected = await SecurityService.IsProtectedAsync();
+
+            statusMessage = "Loading your journal...";
+            await Task.Delay(500); // Brief delay for smooth UX
+            StateHasChanged();
+
+            // Navigate to the appropriate page
+            if (isProtected)
+            {
+                Navigation.NavigateTo("/login", true);
+            }
+            else
+            {
+                Navigation.NavigateTo("/dashboard", true);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Startup initialization error: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            errorMessage = ex.Message;
+            statusMessage = "Initialization failed";
+            isInitializing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RetryInitialization()
+    {
+        await InitializeApp();
+    }
+}

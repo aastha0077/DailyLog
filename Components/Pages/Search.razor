@@ -1,0 +1,204 @@
+@page "/search"
+@inject JournalService JournalService
+@inject MoodService MoodService
+@inject NavigationManager Navigation
+
+<PageTitle>Search - My Journals</PageTitle>
+
+<div class="search-container">
+    <div class="search-header">
+        <h1>Search & Filter</h1>
+    </div>
+    
+    <div class="search-filters">
+        <div class="filter-group">
+            <label>Search Text</label>
+            <input type="text" @bind="searchTerm" @bind:event="oninput" @onkeypress="HandleSearchKeyPress" 
+                   class="form-control" placeholder="Search by title or content..." />
+        </div>
+        
+        <div class="filter-row">
+            <div class="filter-group">
+                <label>Start Date</label>
+                <input type="date" @bind="startDate" class="form-control" />
+            </div>
+            
+            <div class="filter-group">
+                <label>End Date</label>
+                <input type="date" @bind="endDate" class="form-control" />
+            </div>
+        </div>
+        
+        <div class="filter-group">
+            <label>Mood</label>
+            <select @bind="selectedMoodId" class="form-control">
+                <option value="0">All Moods</option>
+                @foreach (var moodGroup in moodsByCategory)
+                {
+                    <optgroup label="@moodGroup.Key">
+                        @foreach (var mood in moodGroup.Value)
+                        {
+                            <option value="@mood.Id">@mood.DisplayName</option>
+                        }
+                    </optgroup>
+                }
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label>Tag</label>
+            <input type="text" @bind="selectedTag" @bind:event="oninput" class="form-control" placeholder="Enter a tag..." />
+        </div>
+        
+        <div class="filter-actions">
+            <button class="btn btn-primary" @onclick="PerformSearch">Search</button>
+            <button class="btn btn-secondary" @onclick="ClearFilters">Clear</button>
+        </div>
+    </div>
+    
+    <div class="search-results">
+        @if (isSearching)
+        {
+            <div class="loading">Searching...</div>
+        }
+        else if (searchResults.Any())
+        {
+            <div class="results-count">Found @searchResults.Count entry(ies)</div>
+            <div class="results-list">
+                @foreach (var entry in searchResults)
+                {
+                    <div class="result-item" @onclick="() => NavigateToEntry(entry)">
+                        <div class="result-date">@entry.EntryDate.ToString("MMMM dd, yyyy")</div>
+                        @if (!string.IsNullOrEmpty(entry.Title))
+                        {
+                            <div class="result-title">@entry.Title</div>
+                        }
+                        <div class="result-preview">@GetPreview(entry.Content, searchTerm)</div>
+                        <div class="result-meta">
+                            <span>@entry.WordCount words</span>
+                            @if (!string.IsNullOrEmpty(entry.Category))
+                            {
+                                <span>• @entry.Category</span>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else if (hasSearched)
+        {
+            <div class="empty-state">No entries found matching your criteria.</div>
+        }
+    </div>
+</div>
+
+@code {
+    private string searchTerm = string.Empty;
+    private DateTime? startDate;
+    private DateTime? endDate;
+    private int selectedMoodId = 0;
+    private string selectedTag = string.Empty;
+    
+    private List<JournalEntry> searchResults = new();
+    private List<Mood> allMoods = new();
+    private Dictionary<MoodCategory, List<Mood>> moodsByCategory = new();
+    private bool isSearching = false;
+    private bool hasSearched = false;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        allMoods = await MoodService.GetAllMoodsAsync();
+        moodsByCategory = allMoods.GroupBy(m => m.Category)
+            .ToDictionary(g => g.Key, g => g.ToList());
+    }
+    
+    private async Task PerformSearch()
+    {
+        isSearching = true;
+        hasSearched = true;
+        
+        try
+        {
+            List<JournalEntry> results;
+            
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                results = await JournalService.SearchEntriesAsync(searchTerm);
+            }
+            else
+            {
+                results = await JournalService.GetAllEntriesAsync();
+            }
+            
+            // Apply filters
+            results = await JournalService.FilterEntriesAsync(
+                startDate,
+                endDate,
+                selectedMoodId > 0 ? selectedMoodId : null,
+                string.IsNullOrWhiteSpace(selectedTag) ? null : selectedTag
+            );
+            
+            // If search term was used, ensure results match
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var term = searchTerm.ToLower();
+                results = results.Where(e => 
+                    e.Title.ToLower().Contains(term) || 
+                    e.Content.ToLower().Contains(term)
+                ).ToList();
+            }
+            
+            searchResults = results.OrderByDescending(e => e.EntryDate).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error performing search: {ex.Message}");
+            searchResults = new();
+        }
+        finally
+        {
+            isSearching = false;
+        }
+    }
+    
+    private async Task HandleSearchKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await PerformSearch();
+        }
+    }
+    
+    private void ClearFilters()
+    {
+        searchTerm = string.Empty;
+        startDate = null;
+        endDate = null;
+        selectedMoodId = 0;
+        selectedTag = string.Empty;
+        searchResults = new();
+        hasSearched = false;
+    }
+    
+    private void NavigateToEntry(JournalEntry entry)
+    {
+        Navigation.NavigateTo($"/entry/{entry.EntryDate:yyyy-MM-dd}");
+    }
+    
+    private string GetPreview(string content, string highlightTerm)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return "No content";
+        
+        var preview = content.Length > 200 ? content.Substring(0, 200) + "..." : content;
+        preview = preview.Replace("\n", " ");
+        
+        if (!string.IsNullOrWhiteSpace(highlightTerm))
+        {
+            preview = preview.Replace(highlightTerm, $"<mark>{highlightTerm}</mark>", StringComparison.OrdinalIgnoreCase);
+        }
+        
+        return preview;
+    }
+}
+

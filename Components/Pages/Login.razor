@@ -1,0 +1,139 @@
+@page "/login"
+@inject SecurityService SecurityService
+@inject NavigationManager Navigation
+
+<PageTitle>Login - My Journals</PageTitle>
+
+<div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow">
+                    <div class="card-body p-4">
+                        <div class="text-center mb-4">
+                            <div class="display-4 mb-3">🔒</div>
+                            <h2 class="card-title mb-2">My Journals</h2>
+                            <p class="text-muted">Welcome back! Please authenticate to continue.</p>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="bi bi-exclamation-triangle me-2"></i>@errorMessage
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label for="pin" class="form-label fw-semibold">Enter PIN</label>
+                            <input id="pin" type="password" class="form-control form-control-lg text-center" @bind="loginModel.PIN"
+                                   placeholder="Enter your 6-digit PIN" maxlength="6" required />
+                        </div>
+
+                        <div class="d-grid mb-3">
+                            <button type="button" class="btn btn-primary btn-lg" @onclick="HandleLogin" disabled="@isLoading">
+                                <span class="spinner-border spinner-border-sm me-2" role="status" style="display: @(isLoading ? "inline-block" : "none")"></span>
+                                @(isLoading ? "Authenticating..." : "Login")
+                                <i class="bi bi-shield-check ms-2" style="display: @(isLoading ? "none" : "inline")"></i>
+                            </button>
+                        </div>
+
+                        <div class="text-center">
+                            <small class="text-muted">New user? The app will initialize on first launch.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginModel loginModel = new();
+    private string errorMessage = string.Empty;
+    private bool isLoading = false;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Retry logic for database access
+            bool isProtected = false;
+            int retryCount = 0;
+            const int maxRetries = 3;
+
+            while (retryCount < maxRetries)
+            {
+                try
+                {
+                    isProtected = await SecurityService.IsProtectedAsync();
+                    break; // Success, exit retry loop
+                }
+                catch (Exception ex)
+                {
+                    retryCount++;
+                    Console.WriteLine($"Login security check failed (attempt {retryCount}): {ex.Message}");
+
+                    if (retryCount < maxRetries)
+                    {
+                        await Task.Delay(500); // Wait before retry
+                    }
+                    else
+                    {
+                        // If all retries failed, assume protected (show login form)
+                        Console.WriteLine("All login security check attempts failed, showing login form");
+                        isProtected = true;
+                    }
+                }
+            }
+
+            if (!isProtected)
+            {
+                Navigation.NavigateTo("/dashboard");
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to check security settings: {ex.Message}";
+        }
+    }
+    
+    private async Task HandleLogin()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+            if (string.IsNullOrEmpty(loginModel.PIN) || loginModel.PIN.Length != 6)
+            {
+                errorMessage = "Please enter a valid 6-digit PIN.";
+                return;
+            }
+
+            bool isValid = await SecurityService.VerifyPINAsync(loginModel.PIN);
+
+            if (isValid)
+            {
+                Navigation.NavigateTo("/dashboard");
+            }
+            else
+            {
+                errorMessage = "Invalid PIN. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+    
+    public class LoginModel
+    {
+        public string? PIN { get; set; }
+    }
+}

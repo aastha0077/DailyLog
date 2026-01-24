@@ -1,0 +1,543 @@
+@page "/entry/{date?}"
+@page "/entry"
+@inject JournalService JournalService
+@inject MoodService MoodService
+@inject NavigationManager Navigation
+
+<PageTitle>Journal Entry - My Journals</PageTitle>
+
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body py-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <button type="button" class="btn btn-outline-secondary btn-lg" @onclick='() => Navigation.NavigateTo("/dashboard")'>
+                                <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+                            </button>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <i class="bi bi-pencil-square text-primary me-3 fs-2"></i>
+                                <div>
+                                    <h2 class="h4 mb-0 fw-bold text-dark">@GetDateDisplay()</h2>
+                                    <small class="text-muted">Journal Entry</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <button type="submit" class="btn btn-primary btn-lg px-4" disabled="@isSaving">
+                                @if (isSaving)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                    <span>Saving...</span>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-check-circle me-2"></i>
+                                    <span>Save Entry</span>
+                                }
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle me-2"></i>@errorMessage
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle me-2"></i>@successMessage
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <form @onsubmit="SaveEntry">
+        <!-- Main Content Section -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-bottom-0 py-4">
+                        <h5 class="mb-0 d-flex align-items-center">
+                            <i class="bi bi-file-earmark-text me-2 text-primary"></i>
+                            Entry Details
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <!-- Title Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <label for="title" class="form-label fw-semibold text-dark mb-2">
+                                    <i class="bi bi-tag me-1 text-secondary"></i>Title (Optional)
+                                </label>
+                                <input id="title" type="text" class="form-control form-control-lg border-0 bg-light"
+                                       @bind="entry.Title" placeholder="Give your entry a meaningful title..." />
+                            </div>
+                        </div>
+
+                        <!-- Content Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <label for="content" class="form-label fw-semibold text-dark mb-3">
+                                    <i class="bi bi-pencil me-1 text-secondary"></i>Content <span class="text-danger">*</span>
+                                </label>
+                                <div class="bg-light rounded p-2 mb-3">
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-sm @(entry.IsMarkdown ? "btn-outline-primary" : "btn-primary")"
+                                                @onclick="() => entry.IsMarkdown = false">
+                                            <i class="bi bi-type me-1"></i>Rich Text
+                                        </button>
+                                        <button type="button" class="btn btn-sm @(entry.IsMarkdown ? "btn-primary" : "btn-outline-primary")"
+                                                @onclick="() => entry.IsMarkdown = true">
+                                            <i class="bi bi-markdown me-1"></i>Markdown
+                                        </button>
+                                    </div>
+                                </div>
+                                <textarea id="content" class="form-control border-0 bg-light" rows="15" @bind="entry.Content"
+                                         placeholder="Start writing your thoughts, feelings, and experiences here. Let your words flow freely..."
+                                         required style="resize: vertical; min-height: 400px;"></textarea>
+                                <div class="form-text text-muted mt-2">
+                                    <i class="bi bi-info-circle me-1"></i>Your thoughts are safe and private here.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mood and Category Section -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="fw-bold text-dark mb-3 d-flex align-items-center">
+                                    <i class="bi bi-emoji-smile me-2 text-warning"></i>How are you feeling?
+                                </h6>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="primaryMood" class="form-label fw-semibold">
+                                            <i class="bi bi-star-fill me-1 text-warning"></i>Primary Mood <span class="text-danger">*</span>
+                                        </label>
+                                        <select id="primaryMood" class="form-select form-select-lg" @bind="entry.PrimaryMoodId" required>
+                                            <option value="0">Select your primary mood...</option>
+                                            @if (moodsByCategory.Any())
+                                            {
+                                                @foreach (var moodGroup in moodsByCategory)
+                                                {
+                                                    <optgroup label="@moodGroup.Key">
+                                                        @foreach (var mood in moodGroup.Value)
+                                                        {
+                                                            <option value="@mood.Id">@mood.DisplayName</option>
+                                                        }
+                                                    </optgroup>
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label for="secondaryMood1" class="form-label fw-semibold">
+                                            <i class="bi bi-plus-circle me-1 text-info"></i>Secondary Mood 1 (Optional)
+                                        </label>
+                                        <select id="secondaryMood1" class="form-select" @bind="secondaryMood1Value">
+                                            <option value="0">No secondary mood</option>
+                                            @if (moodsByCategory.Any())
+                                            {
+                                                @foreach (var moodGroup in moodsByCategory)
+                                                {
+                                                    @foreach (var mood in moodGroup.Value)
+                                                    {
+                                                        <option value="@mood.Id">@moodGroup.Key - @mood.DisplayName</option>
+                                                    }
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="secondaryMood2" class="form-label fw-semibold">
+                                            <i class="bi bi-plus-circle me-1 text-info"></i>Secondary Mood 2 (Optional)
+                                        </label>
+                                        <select id="secondaryMood2" class="form-select" @bind="secondaryMood2Value">
+                                            <option value="0">No additional mood</option>
+                                            @if (moodsByCategory.Any())
+                                            {
+                                                @foreach (var moodGroup in moodsByCategory)
+                                                {
+                                                    @foreach (var mood in moodGroup.Value)
+                                                    {
+                                                        <option value="@mood.Id">@moodGroup.Key - @mood.DisplayName</option>
+                                                    }
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label for="category" class="form-label fw-semibold">
+                                            <i class="bi bi-folder me-1 text-success"></i>Category (Optional)
+                                        </label>
+                                        <input id="category" type="text" class="form-control" @bind="entry.Category"
+                                               placeholder="e.g., Personal, Work, Health, Travel..." />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tags Section -->
+                        <div class="col-12 mb-4">
+                            <h6 class="fw-bold text-dark mb-3 d-flex align-items-center">
+                                <i class="bi bi-tags me-2 text-success"></i>Tags & Organization
+                            </h6>
+
+                            @if (selectedTags.Any())
+                            {
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small">Selected Tags:</label>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        @foreach (var tag in selectedTags)
+                                        {
+                                            <span class="badge bg-primary d-flex align-items-center px-3 py-2">
+                                                <i class="bi bi-tag me-1"></i>
+                                                @tag
+                                                <button type="button" class="btn-close btn-close-white ms-2" @onclick="() => RemoveTag(tag)"
+                                                        style="font-size: 12px; width: 16px; height: 16px;" aria-label="Remove tag"></button>
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-plus-circle me-1 text-primary"></i>Add New Tag
+                                </label>
+                                <input type="text" class="form-control" @bind="newTagInput"
+                                       placeholder="Type a tag and press Enter to add..."
+                                       @onkeypress="HandleTagInput" />
+                                <div class="form-text">
+                                    <small class="text-muted">Press Enter to add tags. Use relevant keywords to organize your entries.</small>
+                                </div>
+                            </div>
+
+                            @if (MyJournals.Models.PredefinedTags.Tags.Any(t => !selectedTags.Contains(t, StringComparer.OrdinalIgnoreCase)))
+                            {
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small">Quick Add:</label>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        @foreach (var tag in MyJournals.Models.PredefinedTags.Tags.Where(t => !selectedTags.Contains(t, StringComparer.OrdinalIgnoreCase)).Take(12))
+                                        {
+                                            <button type="button" class="btn btn-sm btn-outline-primary" @onclick="() => AddTag(tag)">
+                                                <i class="bi bi-plus me-1"></i>@tag
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        @if (entry.Id > 0)
+                        {
+                            <hr class="my-4">
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="alert alert-info border-0 bg-light">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="bi bi-info-circle text-info me-2 fs-5"></i>
+                                            <h6 class="mb-0 fw-bold text-dark">Entry Statistics</h6>
+                                        </div>
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="bi bi-calendar-plus text-success me-2"></i>
+                                                    <div>
+                                                        <small class="text-muted d-block">Created</small>
+                                                        <span class="fw-semibold">@entry.CreatedAt.ToString("yyyy-MM-dd HH:mm")</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="bi bi-pencil-square text-warning me-2"></i>
+                                                    <div>
+                                                        <small class="text-muted d-block">Last Updated</small>
+                                                        <span class="fw-semibold">@entry.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="bi bi-file-text text-primary me-2"></i>
+                                                    <div>
+                                                        <small class="text-muted d-block">Word Count</small>
+                                                        <span class="fw-semibold">@entry.WordCount words</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    @if (entry.Id > 0)
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="alert alert-warning border-0 bg-warning bg-opacity-10">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-exclamation-triangle text-warning me-2 fs-5"></i>
+                            <span class="text-dark fw-medium">This action cannot be undone.</span>
+                        </div>
+                        <button class="btn btn-outline-danger ms-3" @onclick="DeleteEntry" disabled="@isDeleting">
+                            <span class="spinner-border spinner-border-sm me-2" role="status" style="display: @(isDeleting ? "inline-block" : "none")"></span>
+                            @(isDeleting ? "Deleting..." : "Delete Entry")
+                            <i class="bi bi-trash me-2" style="display: @(isDeleting ? "none" : "inline")"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string? date { get; set; }
+    
+    private JournalEntry entry = new();
+    private List<Mood> allMoods = new();
+    private Dictionary<MoodCategory, List<Mood>> moodsByCategory = new();
+    private List<string> selectedTags = new();
+    private string newTagInput = string.Empty;
+    private string? errorMessage;
+    private string? successMessage;
+    private bool isSaving = false;
+    private bool isDeleting = false;
+    private int secondaryMood1Value = 0;
+    private int secondaryMood2Value = 0;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Console.WriteLine("JournalEditor initializing...");
+            allMoods = await MoodService.GetAllMoodsAsync();
+            Console.WriteLine($"Loaded {allMoods?.Count ?? 0} moods");
+
+            if (allMoods == null || allMoods.Count == 0)
+            {
+                errorMessage = "Failed to load mood data. Please restart the app.";
+                Console.WriteLine("ERROR: No moods loaded");
+                return;
+            }
+
+            moodsByCategory = allMoods.GroupBy(m => m.Category)
+                .ToDictionary(g => g.Key, g => g.ToList());
+            Console.WriteLine($"Grouped moods into {moodsByCategory.Count} categories");
+
+            await LoadEntry();
+            Console.WriteLine("JournalEditor initialization completed");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to initialize journal editor: {ex.Message}";
+            Console.WriteLine($"JournalEditor initialization error: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+        }
+    }
+    
+    private async Task LoadEntry()
+    {
+        try
+        {
+            DateTime entryDate;
+
+            if (!string.IsNullOrEmpty(date))
+            {
+                if (DateTime.TryParse(date, out var parsedDate))
+                {
+                    entryDate = parsedDate;
+                    Console.WriteLine($"Parsed date parameter: {date} -> {entryDate}");
+                }
+                else
+                {
+                    entryDate = DateTime.Today;
+                    Console.WriteLine($"Failed to parse date parameter: {date}, using today");
+                }
+            }
+            else
+            {
+                entryDate = DateTime.Today;
+                Console.WriteLine("No date parameter provided, using today");
+            }
+
+            var existing = await JournalService.GetEntryByDateAsync(entryDate);
+            if (existing != null)
+            {
+                entry = existing;
+                selectedTags = JournalService.GetTags(entry);
+                Console.WriteLine($"Loaded existing entry for {entryDate:yyyy-MM-dd}");
+            }
+            else
+            {
+                entry = new JournalEntry
+                {
+                    EntryDate = entryDate.Date,
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                };
+                Console.WriteLine($"Created new entry for {entryDate:yyyy-MM-dd}");
+            }
+
+            // Handle nullable SecondaryMood fields
+            secondaryMood1Value = entry.SecondaryMood1Id ?? 0;
+            secondaryMood2Value = entry.SecondaryMood2Id ?? 0;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load entry: {ex.Message}";
+            Console.WriteLine($"LoadEntry error: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+        }
+    }
+    
+    private string GetDateDisplay()
+    {
+        return entry.EntryDate.ToString("MMMM dd, yyyy");
+    }
+    
+    private void AddTag(string tag)
+    {
+        if (!string.IsNullOrWhiteSpace(tag) && !selectedTags.Contains(tag, StringComparer.OrdinalIgnoreCase))
+        {
+            selectedTags.Add(tag);
+            newTagInput = string.Empty;
+        }
+    }
+    
+    private void RemoveTag(string tag)
+    {
+        selectedTags.Remove(tag);
+    }
+    
+    private async Task HandleTagInput(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(newTagInput))
+        {
+            AddTag(newTagInput.Trim());
+        }
+    }
+    
+    private async Task SaveEntry()
+    {
+        if (entry.PrimaryMoodId <= 0)
+        {
+            errorMessage = "Please select a primary mood.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(entry.Content))
+        {
+            errorMessage = "Content is required.";
+            return;
+        }
+
+        isSaving = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            Console.WriteLine("Saving entry...");
+            JournalService.SetTags(entry, selectedTags);
+
+            // Update secondary mood values
+            entry.SecondaryMood1Id = secondaryMood1Value > 0 ? secondaryMood1Value : null;
+            entry.SecondaryMood2Id = secondaryMood2Value > 0 ? secondaryMood2Value : null;
+
+            var saved = await JournalService.CreateOrUpdateEntryAsync(entry);
+            entry = saved;
+            selectedTags = JournalService.GetTags(entry);
+
+            successMessage = "Entry saved successfully!";
+            Console.WriteLine("Entry saved successfully");
+
+            // Clear message after 3 seconds
+            _ = Task.Delay(3000).ContinueWith(_ => {
+                successMessage = null;
+                InvokeAsync(StateHasChanged);
+            });
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error saving entry: {ex.Message}";
+            Console.WriteLine($"SaveEntry error: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+    
+    private async Task DeleteEntry()
+    {
+        if (!await ConfirmDelete())
+            return;
+        
+        isDeleting = true;
+        errorMessage = null;
+        
+        try
+        {
+            await JournalService.DeleteEntryAsync(entry.Id);
+            Navigation.NavigateTo("/dashboard");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error deleting entry: {ex.Message}";
+            isDeleting = false;
+        }
+    }
+    
+    
+    private void UpdateSecondaryMood1(int value)
+    {
+        secondaryMood1Value = value;
+    }
+
+    private void UpdateSecondaryMood2(int value)
+    {
+        secondaryMood2Value = value;
+    }
+
+    private async Task<bool> ConfirmDelete()
+    {
+        await Task.Yield(); 
+        return true;
+    }
+}
+

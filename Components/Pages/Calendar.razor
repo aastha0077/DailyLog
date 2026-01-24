@@ -1,0 +1,83 @@
+@page "/calendar"
+@inject JournalService JournalService
+@inject NavigationManager Navigation
+
+<PageTitle>Calendar - My Journals</PageTitle>
+
+<div class="calendar-container">
+    <div class="calendar-header">
+        <button class="btn btn-nav" @onclick="PreviousMonth">←</button>
+        <h2>@currentMonth.ToString("MMMM yyyy")</h2>
+        <button class="btn btn-nav" @onclick="NextMonth">→</button>
+    </div>
+    
+    <div class="calendar-grid">
+        <div class="calendar-weekday">Sun</div>
+        <div class="calendar-weekday">Mon</div>
+        <div class="calendar-weekday">Tue</div>
+        <div class="calendar-weekday">Wed</div>
+        <div class="calendar-weekday">Thu</div>
+        <div class="calendar-weekday">Fri</div>
+        <div class="calendar-weekday">Sat</div>
+        
+        @for (int i = 0; i < firstDayOfWeek; i++)
+        {
+            <div class="calendar-day empty"></div>
+        }
+        
+        @for (int day = 1; day <= daysInMonth; day++)
+        {
+            var date = new DateTime(currentMonth.Year, currentMonth.Month, day);
+            var hasEntry = entryDates.Contains(date.Date);
+            var isToday = date.Date == DateTime.Today;
+            
+            <div class="calendar-day @(hasEntry ? "has-entry" : "") @(isToday ? "today" : "")" 
+                 @onclick="() => NavigateToEntry(date)">
+                <div class="day-number">@day</div>
+                @if (hasEntry)
+                {
+                    <div class="entry-indicator">●</div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private DateTime currentMonth = DateTime.Today;
+    private HashSet<DateTime> entryDates = new();
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEntriesForMonth();
+    }
+    
+    private async Task LoadEntriesForMonth()
+    {
+        var startDate = new DateTime(currentMonth.Year, currentMonth.Month, 1);
+        var endDate = startDate.AddMonths(1).AddDays(-1);
+        var entries = await JournalService.GetEntriesByDateRangeAsync(startDate, endDate);
+        entryDates = entries.Select(e => e.EntryDate.Date).ToHashSet();
+    }
+    
+    private int firstDayOfWeek => (int)new DateTime(currentMonth.Year, currentMonth.Month, 1).DayOfWeek;
+    private int daysInMonth => DateTime.DaysInMonth(currentMonth.Year, currentMonth.Month);
+    
+    private async Task PreviousMonth()
+    {
+        currentMonth = currentMonth.AddMonths(-1);
+        await LoadEntriesForMonth();
+    }
+    
+    private async Task NextMonth()
+    {
+        currentMonth = currentMonth.AddMonths(1);
+        await LoadEntriesForMonth();
+    }
+    
+    private void NavigateToEntry(DateTime date)
+    {
+        Navigation.NavigateTo($"/entry/{date:yyyy-MM-dd}");
+    }
+}
+

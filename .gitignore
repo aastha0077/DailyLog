@@ -30,3 +30,4 @@ packages/
 *.mdb
 *.dbmdl
 *.vs/
+.agent/
