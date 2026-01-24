@@ -6,8 +6,11 @@
 <PageTitle>Search - My Journals</PageTitle>
 
 <div class="search-container">
-    <div class="search-header">
-        <h1>Search & Filter</h1>
+    <div class="search-header d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">Search & Filter</h1>
+        <button class="btn btn-primary" @onclick='() => Navigation.NavigateTo("/entry")'>
+            <i class="bi bi-plus-lg me-2"></i>Add New Entry
+        </button>
     </div>
     
     <div class="search-filters">
@@ -131,11 +134,15 @@
             }
             
             // Apply filters
-            results = await JournalService.FilterEntriesAsync(
+            var moodIds = selectedMoodId > 0 ? new List<int> { selectedMoodId } : null;
+            var tags = string.IsNullOrWhiteSpace(selectedTag) ? null : new List<string> { selectedTag };
+            
+            results = await JournalService.SearchEntriesAsync(
+                searchTerm,
                 startDate,
                 endDate,
-                selectedMoodId > 0 ? selectedMoodId : null,
-                string.IsNullOrWhiteSpace(selectedTag) ? null : selectedTag
+                moodIds,
+                tags
             );
             
             // If search term was used, ensure results match

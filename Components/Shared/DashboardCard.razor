@@ -1,0 +1,27 @@
+<div class="dashboard-section">
+    <h5 class="card-title d-flex align-items-center mb-4">
+        @if (!string.IsNullOrEmpty(Icon))
+        {
+            <div class="bg-gradient-@IconColor rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+                <i class="bi bi-@Icon text-white fs-4"></i>
+            </div>
+        }
+        <span class="fw-bold">@Title</span>
+    </h5>
+    
+    @ChildContent
+</div>
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Icon { get; set; } = string.Empty;
+
+    [Parameter]
+    public string IconColor { get; set; } = "primary";
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; } = null!;
+}

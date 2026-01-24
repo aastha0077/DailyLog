@@ -1,0 +1,43 @@
+.result-item {
+    background: #ffffff;
+    color: #212529;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: background 0.2s ease;
+}
+
+.result-item:hover {
+    background: #f8f9fa;
+}
+
+.result-date {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+}
+
+.result-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.5rem;
+}
+
+.result-preview {
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.result-meta {
+    font-size: 0.85rem;
+    color: #6c757d;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.result-meta span {
+    color: inherit;
+}

@@ -1,223 +1,196 @@
 using MyJournals.Database;
 using MyJournals.Models;
+using MyJournals.Utils;
 using SQLite;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 
 namespace MyJournals.Services;
 
-public class JournalService
+public class JournalService : BaseService
 {
-    private readonly AppDatabase _database;
-    
-    public JournalService(AppDatabase database)
+    public JournalService(AppDatabase database) : base(database)
     {
-        _database = database;
     }
     
     public async Task<JournalEntry?> GetEntryByDateAsync(DateTime date)
     {
-        try
+        return await ExecuteWithRetryAsync(async () =>
         {
-            // SQLite-Net-PCL can't handle DateTime.Date comparisons, so we compare year, month, day separately
+            if (!await IsDatabaseReadyAsync())
+                return null;
+
             var targetDate = date.Date;
             var entries = await _database.Connection.Table<JournalEntry>().ToListAsync();
             return entries.FirstOrDefault(e =>
                 e.EntryDate.Year == targetDate.Year &&
                 e.EntryDate.Month == targetDate.Month &&
                 e.EntryDate.Day == targetDate.Day);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error getting entry by date: {ex.Message}");
-            return null;
-        }
+        });
     }
     
     public async Task<JournalEntry?> GetEntryByIdAsync(int id)
     {
-        return await _database.Connection.GetAsync<JournalEntry>(id);
+        return await ExecuteWithRetryAsync(async () =>
+        {
+            if (!await IsDatabaseReadyAsync())
+                return null;
+                
+            return await _database.Connection.GetAsync<JournalEntry>(id);
+        });
     }
     
     public async Task<List<JournalEntry>> GetAllEntriesAsync()
     {
-        try
+        return await ExecuteWithRetryAsync(async () =>
         {
+            if (!await IsDatabaseReadyAsync())
+                return new List<JournalEntry>();
+                
             return await _database.Connection.Table<JournalEntry>()
                 .OrderByDescending(e => e.EntryDate)
                 .ToListAsync();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error getting all entries: {ex.Message}");
-            return new List<JournalEntry>();
-        }
+        });
     }
     
     public async Task<List<JournalEntry>> GetEntriesByDateRangeAsync(DateTime startDate, DateTime endDate)
     {
-        try
+        return await ExecuteWithRetryAsync(async () =>
         {
-            var start = startDate.Date;
-            var end = endDate.Date;
-            var allEntries = await _database.Connection.Table<JournalEntry>().ToListAsync();
-            return allEntries
-                .Where(e => e.EntryDate.Date >= start && e.EntryDate.Date <= end)
-                .OrderByDescending(e => e.EntryDate)
-                .ToList();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error getting entries by date range: {ex.Message}");
-            return new List<JournalEntry>();
-        }
-    }
-    
-    public async Task<List<JournalEntry>> SearchEntriesAsync(string searchTerm)
-    {
-        var term = searchTerm.ToLower();
-        return await _database.Connection.Table<JournalEntry>()
-            .Where(e => e.Title.ToLower().Contains(term) || e.Content.ToLower().Contains(term))
-            .OrderByDescending(e => e.EntryDate)
-            .ToListAsync();
-    }
-    
-    public async Task<List<JournalEntry>> FilterEntriesAsync(
-        DateTime? startDate = null,
-        DateTime? endDate = null,
-        int? moodId = null,
-        string? tag = null)
-    {
-        try
-        {
-            var allEntries = await _database.Connection.Table<JournalEntry>().ToListAsync();
+            if (!await IsDatabaseReadyAsync())
+                return new List<JournalEntry>();
 
-            var results = allEntries.AsQueryable();
-
-            if (startDate.HasValue)
-            {
-                var start = startDate.Value.Date;
-                results = results.Where(e => e.EntryDate.Date >= start);
-            }
-
-            if (endDate.HasValue)
-            {
-                var end = endDate.Value.Date;
-                results = results.Where(e => e.EntryDate.Date <= end);
-            }
-
-            if (moodId.HasValue)
-            {
-                results = results.Where(e => e.PrimaryMoodId == moodId.Value ||
-                                           e.SecondaryMood1Id == moodId.Value ||
-                                           e.SecondaryMood2Id == moodId.Value);
-            }
-
-            var filteredResults = results.OrderByDescending(e => e.EntryDate).ToList();
-
-            if (!string.IsNullOrEmpty(tag))
-            {
-                filteredResults = filteredResults.Where(e => GetTags(e).Contains(tag, StringComparer.OrdinalIgnoreCase)).ToList();
-            }
-
-            return filteredResults;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error filtering entries: {ex.Message}");
-            return new List<JournalEntry>();
-        }
+            var entries = await _database.Connection.Table<JournalEntry>().ToListAsync();
+            return entries.Where(e => e.EntryDate.Date >= startDate.Date && e.EntryDate.Date <= endDate.Date)
+                         .OrderByDescending(e => e.EntryDate)
+                         .ToList();
+        });
     }
     
     public async Task<JournalEntry> CreateOrUpdateEntryAsync(JournalEntry entry)
     {
-        var existing = await GetEntryByDateAsync(entry.EntryDate);
-        
-        if (existing != null)
+        return await ExecuteWithRetryAsync(async () =>
         {
-            // Update existing entry
-            entry.Id = existing.Id;
-            entry.CreatedAt = existing.CreatedAt;
+            if (!await IsDatabaseReadyAsync())
+                throw new InvalidOperationException("Database not available");
+
             entry.UpdatedAt = DateTime.Now;
-            entry.WordCount = CountWords(entry.Content);
-            await _database.Connection.UpdateAsync(entry);
+            entry.WordCount = StringHelpers.CountWords(entry.Content);
+
+            var existingEntry = await GetEntryByDateAsync(entry.EntryDate);
+            
+            if (existingEntry != null)
+            {
+                entry.Id = existingEntry.Id;
+                entry.CreatedAt = existingEntry.CreatedAt;
+                await _database.Connection.UpdateAsync(entry);
+                LogInfo($"Updated entry for {entry.EntryDate:yyyy-MM-dd}");
+            }
+            else
+            {
+                entry.CreatedAt = DateTime.Now;
+                await _database.Connection.InsertAsync(entry);
+                LogInfo($"Created entry for {entry.EntryDate:yyyy-MM-dd}");
+            }
+
             return entry;
-        }
-        else
-        {
-            // Create new entry
-            entry.CreatedAt = DateTime.Now;
-            entry.UpdatedAt = DateTime.Now;
-            entry.WordCount = CountWords(entry.Content);
-            await _database.Connection.InsertAsync(entry);
-            return entry;
-        }
+        });
     }
     
-    public async Task<bool> DeleteEntryAsync(int id)
+    public async Task DeleteEntryAsync(int id)
     {
-        var entry = await GetEntryByIdAsync(id);
-        if (entry != null)
+        await ExecuteWithRetryAsync<object>(async () =>
         {
-            await _database.Connection.DeleteAsync(entry);
-            return true;
-        }
-        return false;
-    }
-    
-    public async Task<bool> DeleteEntryByDateAsync(DateTime date)
-    {
-        var entry = await GetEntryByDateAsync(date);
-        if (entry != null)
-        {
-            await _database.Connection.DeleteAsync(entry);
-            return true;
-        }
-        return false;
+            if (!await IsDatabaseReadyAsync())
+                throw new InvalidOperationException("Database not available");
+
+            await _database.Connection.DeleteAsync<JournalEntry>(id);
+            LogInfo($"Deleted entry with ID: {id}");
+            return null!;
+        });
     }
     
     public List<string> GetTags(JournalEntry entry)
     {
-        if (string.IsNullOrEmpty(entry.Tags))
-            return new List<string>();
-        
-        try
-        {
-            return JsonSerializer.Deserialize<List<string>>(entry.Tags) ?? new List<string>();
-        }
-        catch
-        {
-            return new List<string>();
-        }
+        return StringHelpers.ExtractTags(entry.Tags);
     }
     
     public void SetTags(JournalEntry entry, List<string> tags)
     {
-        entry.Tags = JsonSerializer.Serialize(tags);
+        entry.Tags = StringHelpers.ConvertTagsToJson(tags?.Distinct().ToList() ?? new List<string>());
     }
     
-    private int CountWords(string text)
+    public async Task<List<JournalEntry>> SearchEntriesAsync(string searchTerm, DateTime? startDate = null, DateTime? endDate = null, List<int>? moodIds = null, List<string>? tags = null)
     {
-        if (string.IsNullOrWhiteSpace(text))
-            return 0;
-        
-        // Remove markdown formatting for word count
-        var plainText = Regex.Replace(text, @"[#*_`\[\]()]", " ");
-        var words = plainText.Split(new[] { ' ', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-        return words.Length;
+        return await ExecuteWithRetryAsync(async () =>
+        {
+            if (!await IsDatabaseReadyAsync())
+                return new List<JournalEntry>();
+
+            var entries = await GetAllEntriesAsync();
+            
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                searchTerm = searchTerm.ToLower();
+                entries = entries.Where(e => 
+                    e.Title.ToLower().Contains(searchTerm) || 
+                    e.Content.ToLower().Contains(searchTerm)).ToList();
+            }
+            
+            if (startDate.HasValue)
+            {
+                entries = entries.Where(e => e.EntryDate.Date >= startDate.Value.Date).ToList();
+            }
+            
+            if (endDate.HasValue)
+            {
+                entries = entries.Where(e => e.EntryDate.Date <= endDate.Value.Date).ToList();
+            }
+            
+            if (moodIds != null && moodIds.Any())
+            {
+                entries = entries.Where(e => 
+                    moodIds.Contains(e.PrimaryMoodId) ||
+                    (e.SecondaryMood1Id.HasValue && moodIds.Contains(e.SecondaryMood1Id.Value)) ||
+                    (e.SecondaryMood2Id.HasValue && moodIds.Contains(e.SecondaryMood2Id.Value))
+                ).ToList();
+            }
+            
+            if (tags != null && tags.Any())
+            {
+                entries = entries.Where(e => 
+                {
+                    var entryTags = GetTags(e);
+                    return tags.Any(tag => entryTags.Contains(tag, StringComparer.OrdinalIgnoreCase));
+                }).ToList();
+            }
+            
+            return entries;
+        });
     }
     
     public async Task<List<JournalEntry>> GetPaginatedEntriesAsync(int page, int pageSize)
     {
-        return await _database.Connection.Table<JournalEntry>()
-            .OrderByDescending(e => e.EntryDate)
-            .Skip(page * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
+        return await ExecuteWithRetryAsync(async () =>
+        {
+            if (!await IsDatabaseReadyAsync())
+                return new List<JournalEntry>();
+
+            return await _database.Connection.Table<JournalEntry>()
+                .OrderByDescending(e => e.EntryDate)
+                .Skip(page * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        });
     }
     
     public async Task<int> GetTotalEntryCountAsync()
     {
-        return await _database.Connection.Table<JournalEntry>().CountAsync();
+        return await ExecuteWithRetryAsync(async () =>
+        {
+            if (!await IsDatabaseReadyAsync())
+                return 0;
+                
+            return await _database.Connection.Table<JournalEntry>().CountAsync();
+        });
     }
 }

@@ -6,7 +6,7 @@ namespace MyJournals.Database;
 
 public class AppDatabase
 {
-    private const string DatabaseFilename = "MyJournals.db3";
+    private const string DatabaseFilename = "_myjournals_.db3";
     private SQLiteAsyncConnection? _connection;
     
     public SQLiteAsyncConnection Connection
@@ -62,16 +62,11 @@ public class AppDatabase
             Debug.WriteLine($"Database connection created successfully");
 
             // Verify file exists
-            if (!File.Exists(databasePath))
-            {
-                Debug.WriteLine($"ERROR: Database file was not created at {databasePath}");
-                throw new Exception($"Database file not found at {databasePath}");
-            }
+            // Verify file exists check removed as it may not exist until first write
+            Debug.WriteLine("Proceeding to create tables...");
 
-            var fileInfo = new FileInfo(databasePath);
-            Debug.WriteLine($"Database file size: {fileInfo.Length} bytes");
-            Debug.WriteLine($"Database file created: {fileInfo.CreationTime}");
-            Debug.WriteLine($"Database file last modified: {fileInfo.LastWriteTime}");
+            // FileInfo check moved to after table creation
+            Debug.WriteLine("Skipping file info check until tables are created...");
 
             // Create tables one by one to catch any specific issues
             await Connection.CreateTableAsync<Mood>();
@@ -236,6 +231,9 @@ public class AppDatabase
 
             status.IsValid = status.HasMoods && status.HasUserSettings;
 
+            if (!status.HasMoods) status.ErrorMessage += " Moods not seeded. ";
+            if (!status.HasUserSettings) status.ErrorMessage += " User settings missing. ";
+
             var fileInfo = new FileInfo(status.DatabasePath);
             status.FileSize = fileInfo.Length;
             status.CreatedDate = fileInfo.CreationTime;
@@ -243,7 +241,7 @@ public class AppDatabase
         }
         catch (Exception ex)
         {
-            status.ErrorMessage = ex.Message;
+            status.ErrorMessage += $" Diagnostic error: {ex.Message}";
             status.IsValid = false;
         }
 

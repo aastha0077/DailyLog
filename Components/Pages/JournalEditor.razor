@@ -3,11 +3,13 @@
 @inject JournalService JournalService
 @inject MoodService MoodService
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Journal Entry - My Journals</PageTitle>
 
 <div class="container-fluid py-4">
-    <!-- Header Section -->
+    <form @onsubmit="SaveEntry">
+        <!-- Header Section -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
@@ -71,8 +73,7 @@
         </div>
     }
 
-    <form @onsubmit="SaveEntry">
-        <!-- Main Content Section -->
+    <!-- Main Content Section -->
         <div class="row">
             <div class="col-12">
                 <div class="card shadow-sm border-0">
@@ -134,8 +135,8 @@
                                             <i class="bi bi-star-fill me-1 text-warning"></i>Primary Mood <span class="text-danger">*</span>
                                         </label>
                                         <select id="primaryMood" class="form-select form-select-lg" @bind="entry.PrimaryMoodId" required>
-                                            <option value="0">Select your primary mood...</option>
-                                            @if (moodsByCategory.Any())
+                                            <option value="">Select your primary mood...</option>
+                                            @if (moodsByCategory != null && moodsByCategory.Any())
                                             {
                                                 @foreach (var moodGroup in moodsByCategory)
                                                 {
@@ -156,7 +157,7 @@
                                         </label>
                                         <select id="secondaryMood1" class="form-select" @bind="secondaryMood1Value">
                                             <option value="0">No secondary mood</option>
-                                            @if (moodsByCategory.Any())
+                                            @if (moodsByCategory != null && moodsByCategory.Any())
                                             {
                                                 @foreach (var moodGroup in moodsByCategory)
                                                 {
@@ -177,7 +178,7 @@
                                         </label>
                                         <select id="secondaryMood2" class="form-select" @bind="secondaryMood2Value">
                                             <option value="0">No additional mood</option>
-                                            @if (moodsByCategory.Any())
+                                            @if (moodsByCategory != null && moodsByCategory.Any())
                                             {
                                                 @foreach (var moodGroup in moodsByCategory)
                                                 {
@@ -312,7 +313,7 @@
                             <i class="bi bi-exclamation-triangle text-warning me-2 fs-5"></i>
                             <span class="text-dark fw-medium">This action cannot be undone.</span>
                         </div>
-                        <button class="btn btn-outline-danger ms-3" @onclick="DeleteEntry" disabled="@isDeleting">
+                        <button type="button" class="btn btn-outline-danger ms-3" @onclick="DeleteEntry" disabled="@isDeleting">
                             <span class="spinner-border spinner-border-sm me-2" role="status" style="display: @(isDeleting ? "inline-block" : "none")"></span>
                             @(isDeleting ? "Deleting..." : "Delete Entry")
                             <i class="bi bi-trash me-2" style="display: @(isDeleting ? "none" : "inline")"></i>
