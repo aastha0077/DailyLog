@@ -73,19 +73,21 @@
 
     private bool CheckSecurity()
     {
+        string? redirectTo = null;
         try 
         {
             var uri = Navigation.Uri.ToLower();
-            var relativePath = Navigation.ToBaseRelativePath(Navigation.Uri).ToLower();
+            // In some MAUI environments, ToBaseRelativePath can throw if base is unexpected
+            string relativePath = "";
+            try { relativePath = Navigation.ToBaseRelativePath(Navigation.Uri).ToLower(); } catch { }
             
-            // Skip check for login, startup, and the root path (which redirects to startup)
-            if (uri.Contains("/login") || uri.Contains("/startup") || string.IsNullOrEmpty(relativePath))
+            // Skip check for login, startup, and the root path
+            if (uri.Contains("/login") || uri.Contains("/startup") || string.IsNullOrEmpty(relativePath) || relativePath == "/")
                 return true;
 
             if (!SecurityService.IsAuthenticated)
             {
-                Console.WriteLine($"[SECURITY] Unauthenticated access to '{relativePath}'. Redirecting to login.");
-                Navigation.NavigateTo("/login");
+                redirectTo = "/login";
                 return false;
             }
             return true;
@@ -93,7 +95,14 @@
         catch (Exception ex)
         {
             Console.WriteLine($"[SECURITY] Error in CheckSecurity: {ex.Message}");
-            return true; // Don't block navigation if check fails due to URI oddities
+            return true; 
+        }
+        finally
+        {
+            if (redirectTo != null)
+            {
+                Navigation.NavigateTo(redirectTo);
+            }
         }
     }
 

@@ -22,7 +22,10 @@
         <RuntimeIdentifiers>maccatalyst-x64;maccatalyst-arm64</RuntimeIdentifiers>
 
         <!-- Fix native library loading for MacCatalyst -->
+        <MtouchLink>SdkOnly</MtouchLink>
         <MtouchExtraArgs>--rpath @executable_path/../Frameworks</MtouchExtraArgs>
+        <ForceSimulatorObjectFileLinking Condition="'$(TargetFramework)' == 'net8.0-maccatalyst'">true</ForceSimulatorObjectFileLinking>
+        <UseNativeFullPipeline>true</UseNativeFullPipeline>
     </PropertyGroup>
 
     <ItemGroup>
