@@ -12,20 +12,23 @@
         <EnableDefaultCssItems>false</EnableDefaultCssItems>
         <Nullable>enable</Nullable>
 
-        <!-- App Info -->
         <ApplicationTitle>MyJournals</ApplicationTitle>
         <ApplicationId>com.companyname.myjournals</ApplicationId>
         <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
         <ApplicationVersion>1</ApplicationVersion>
 
-        <!-- Target both MacCatalyst architectures -->
         <RuntimeIdentifiers>maccatalyst-x64;maccatalyst-arm64</RuntimeIdentifiers>
 
-        <!-- Fix native library loading for MacCatalyst -->
-        <MtouchLink>SdkOnly</MtouchLink>
+        <MtouchLink Condition="'$(Configuration)' == 'Debug'">None</MtouchLink>
+        <MtouchLink Condition="'$(Configuration)' != 'Debug'">SdkOnly</MtouchLink>
+        
         <MtouchExtraArgs>--rpath @executable_path/../Frameworks</MtouchExtraArgs>
         <ForceSimulatorObjectFileLinking Condition="'$(TargetFramework)' == 'net8.0-maccatalyst'">true</ForceSimulatorObjectFileLinking>
-        <UseNativeFullPipeline>true</UseNativeFullPipeline>
+        
+        <UseInterpreter Condition="'$(Configuration)' == 'Debug'">true</UseInterpreter>
+        <MtouchNoFastMsym>true</MtouchNoFastMsym>
+        <EnableCodeSigning>false</EnableCodeSigning>
+        <CreatePackage>false</CreatePackage>
     </PropertyGroup>
 
     <ItemGroup>

@@ -41,7 +41,6 @@ public static class MauiProgram
         SQLitePCL.Batteries_V2.Init();
         var db = app.Services.GetRequiredService<AppDatabase>();
         Console.WriteLine($"[SYSTEM] Database initialized at: {db.GetDatabasePath()}");
-
         return app;
     }
 }
