@@ -176,6 +176,9 @@
 
     private async Task ExportPdf()
     {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"Export journal entries from {exportStartDate:yyyy-MM-dd} to {exportEndDate:yyyy-MM-dd} to PDF?");
+        if (!confirmed) return;
+
         isExporting = true;
         exportMessage = null;
         try 
