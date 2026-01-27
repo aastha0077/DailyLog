@@ -135,7 +135,7 @@
                                             <i class="bi bi-star-fill me-1 text-warning"></i>Primary Mood <span class="text-danger">*</span>
                                         </label>
                                         <select id="primaryMood" class="form-select form-select-lg" @bind="entry.PrimaryMoodId" required>
-                                            <option value="">Select your primary mood...</option>
+                                            <option value="0">Select your primary mood...</option>
                                             @if (moodsByCategory != null && moodsByCategory.Any())
                                             {
                                                 @foreach (var moodGroup in moodsByCategory)

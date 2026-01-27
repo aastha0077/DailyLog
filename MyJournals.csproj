@@ -20,23 +20,20 @@
 
         <!-- Target both MacCatalyst architectures -->
         <RuntimeIdentifiers>maccatalyst-x64;maccatalyst-arm64</RuntimeIdentifiers>
+
+        <!-- Fix native library loading for MacCatalyst -->
+        <MtouchExtraArgs>--rpath @executable_path/../Frameworks</MtouchExtraArgs>
     </PropertyGroup>
 
     <ItemGroup>
-        <!-- App Icon -->
         <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
-
-        <!-- Splash Screen -->
         <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
 
-        <!-- Images -->
         <MauiImage Include="Resources\Images\*" />
         <MauiImage Update="Resources\Images\dotnet_bot.svg" BaseSize="168,208" />
 
-        <!-- Fonts -->
         <MauiFont Include="Resources\Fonts\*" />
 
-        <!-- Raw Assets -->
         <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
@@ -47,9 +44,12 @@
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.1" />
         <PackageReference Include="SkiaSharp" Version="2.88.8" />
+        <PackageReference Include="SkiaSharp.Views.Maui.Controls" Version="2.88.8" />
         <PackageReference Include="SkiaSharp.NativeAssets.MacCatalyst" Version="2.88.8" />
+    </ItemGroup>
 
-        <!-- SQLite -->
+
+    <ItemGroup>
         <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
         <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.11" />
         <PackageReference Include="SQLitePCLRaw.provider.dynamic_cdecl" Version="3.0.2" />

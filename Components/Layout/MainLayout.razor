@@ -22,14 +22,38 @@
 </div>
 
 @code {
-    private bool ShouldShowSidebar => !Navigation.Uri.Contains("/login") && !Navigation.Uri.Contains("/startup");
+    private bool ShouldShowSidebar 
+    {
+        get 
+        {
+            try 
+            {
+                var uri = Navigation.Uri.ToLower();
+                if (uri.Contains("/login") || uri.Contains("/startup")) return false;
+                
+                var relativePath = Navigation.ToBaseRelativePath(Navigation.Uri).ToLower();
+                return !string.IsNullOrEmpty(relativePath);
+            }
+            catch 
+            {
+                return false; 
+            }
+        }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            var theme = await SecurityService.GetCurrentThemeAsync();
-            await JSRuntime.InvokeVoidAsync("setTheme", theme);
+            try 
+            {
+                var theme = await SecurityService.GetCurrentThemeAsync();
+                await JSRuntime.InvokeVoidAsync("setTheme", theme);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[THEME] Failed to set theme on startup: {ex.Message}");
+            }
         }
     }
 
@@ -41,18 +65,35 @@
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
-        CheckSecurity();
-        StateHasChanged();
+        if (CheckSecurity())
+        {
+            StateHasChanged();
+        }
     }
 
-    private void CheckSecurity()
+    private bool CheckSecurity()
     {
-        if (Navigation.Uri.Contains("/login") || Navigation.Uri.Contains("/startup"))
-            return;
-
-        if (!SecurityService.IsAuthenticated)
+        try 
         {
-            Navigation.NavigateTo("/login");
+            var uri = Navigation.Uri.ToLower();
+            var relativePath = Navigation.ToBaseRelativePath(Navigation.Uri).ToLower();
+            
+            // Skip check for login, startup, and the root path (which redirects to startup)
+            if (uri.Contains("/login") || uri.Contains("/startup") || string.IsNullOrEmpty(relativePath))
+                return true;
+
+            if (!SecurityService.IsAuthenticated)
+            {
+                Console.WriteLine($"[SECURITY] Unauthenticated access to '{relativePath}'. Redirecting to login.");
+                Navigation.NavigateTo("/login");
+                return false;
+            }
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[SECURITY] Error in CheckSecurity: {ex.Message}");
+            return true; // Don't block navigation if check fails due to URI oddities
         }
     }
 

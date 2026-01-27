@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using MyJournals.Database;
 using MyJournals.Services;
+using SkiaSharp.Views.Maui.Controls.Hosting;
 
 namespace MyJournals;
 
@@ -11,6 +12,7 @@ public static class MauiProgram
         var builder = MauiApp.CreateBuilder();
         builder
             .UseMauiApp<App>()
+            .UseSkiaSharp()
             .ConfigureFonts(fonts => { fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular"); });
 
         builder.Services.AddMauiBlazorWebView();
@@ -37,7 +39,8 @@ public static class MauiProgram
 
         // Initialize SQLite - CRITICAL for MacCatalyst
         SQLitePCL.Batteries_V2.Init();
-        Console.WriteLine("SQLite initialized successfully");
+        var db = app.Services.GetRequiredService<AppDatabase>();
+        Console.WriteLine($"[SYSTEM] Database initialized at: {db.GetDatabasePath()}");
 
         return app;
     }

@@ -5,61 +5,66 @@
 <PageTitle>Login - My Journals</PageTitle>
 
 <div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
-    <div class="card shadow border-0" style="max-width: 400px; width: 100%;">
+    <div class="card shadow-sm border-0 animate-fade-in" style="max-width: 400px; width: 100%;">
         <div class="card-body p-5 text-center">
-            <h2 class="fw-bold mb-4">Secure Access</h2>
+            <div class="mb-4">
+                <span class="display-4">🔐</span>
+                <h2 class="fw-bold mt-3">Private Access</h2>
+                <p class="text-muted">Please enter your password to unlock your journal.</p>
+            </div>
             
             @if (!string.IsNullOrEmpty(errorMessage))
             {
-                <div class="alert alert-danger small mb-4">@errorMessage</div>
+                <div class="alert alert-danger small mb-4 py-2">@errorMessage</div>
             }
 
-            <div class="mb-4">
-                <input type="password" 
-                       class="form-control text-center fs-2" 
-                       @bind="pinInput" 
-                       maxlength="6" 
-                       placeholder="••••••" />
-            </div>
+            <EditForm Model="this" OnValidSubmit="SubmitLogin">
+                <div class="mb-4 text-start">
+                    <label class="form-label small fw-bold">Password</label>
+                    <input type="password" 
+                           class="form-control form-control-lg text-center" 
+                           @bind="password" 
+                           placeholder="••••" 
+                           required 
+                           autofocus />
+                </div>
 
-            <button class="btn btn-primary w-100 py-3" @onclick="SubmitLogin">
-                Unlock
-            </button>
+                <button type="submit" class="btn btn-primary w-100 py-3 mt-2 fw-bold shadow-sm">
+                    Unlock Journal
+                </button>
+            </EditForm>
         </div>
     </div>
 </div>
 
 @code {
-    private string pinInput = "";
+    private string password = "";
     private string errorMessage = "";
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        bool isProtected = await SecurityService.IsProtectedAsync();
-        if (!isProtected)
+        if (SecurityService.IsAuthenticated)
         {
-            SecurityService.Authenticate();
             Navigation.NavigateTo("/dashboard");
         }
     }
 
     private async Task SubmitLogin()
     {
-        if (pinInput.Length != 6)
+        if (string.IsNullOrWhiteSpace(password))
         {
-            errorMessage = "Please enter 6 digits.";
+            errorMessage = "Please enter your password.";
             return;
         }
 
-        if (await SecurityService.VerifyPINAsync(pinInput))
+        if (await SecurityService.LoginAsync(password))
         {
-            SecurityService.Authenticate();
             Navigation.NavigateTo("/dashboard");
         }
         else
         {
-            errorMessage = "Invalid PIN.";
-            pinInput = "";
+            errorMessage = "Incorrect password. Please try again.";
+            password = "";
         }
     }
 }

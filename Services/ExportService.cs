@@ -16,7 +16,14 @@ public class ExportService
     {
         var entries = await _journalService.GetEntriesByDateRangeAsync(startDate, endDate);
         var fileName = $"journal_export_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
-        var filePath = Path.Combine(FileSystem.CacheDirectory, fileName);
+        
+        // Use Documents folder on Mac for better visibility
+        string baseDir = FileSystem.CacheDirectory;
+        #if MACCATALYST
+        baseDir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        #endif
+        
+        var filePath = Path.Combine(baseDir, fileName);
         
         using (var stream = new SKFileWStream(filePath))
         using (var document = SKDocument.CreatePdf(stream))

@@ -35,7 +35,7 @@ body {
 
 .app-container {
     display: flex;
-    min-height: 95vh;
+    height: calc(100vh - 20px);
     background: #ffffff;
     margin: 10px;
     border-radius: 12px;
@@ -48,7 +48,6 @@ body {
     background: #ffffff;
     border-right: 1px solid #eee;
     flex-shrink: 0;
-    overflow-y: auto;
 }
 
 .main-content {
@@ -415,7 +414,6 @@ body {
 .form-control:focus {
     border-color: #0d6efd;
     box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
-    transform: translateY(-2px);
 }
 
 .form-select {
@@ -423,14 +421,15 @@ body {
     border: 2px solid rgba(13, 110, 253, 0.1);
     padding: 0.875rem 1.25rem;
     font-weight: 500;
-    transition: all 0.3s ease;
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    background: #ffffff;
+    cursor: pointer;
 }
 
-.form-select:focus {
+.form-select:focus,
+.form-select:active {
     border-color: #0d6efd;
     box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
-    transform: translateY(-2px);
+    transform: none !important;
 }
 
 /* Responsive Design */
@@ -504,4 +503,57 @@ body {
     .content-wrapper {
         padding: 1rem;
     }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.5s ease forwards;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #0d6efd;
+}
+
+/* Glassmorphism utility */
+.glass {
+    background: rgba(255, 255, 255, 0.7) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+/* High-end Hover Effects */
+.hover-lift {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }

@@ -171,7 +171,6 @@
         try
         {
             Console.WriteLine("Dashboard page initialized");
-            await CheckAuthentication();
             await LoadDashboardData();
             Console.WriteLine("Dashboard data loaded successfully");
         }
@@ -179,26 +178,6 @@
         {
             Console.WriteLine($"Dashboard initialization error: {ex.Message}");
             // Continue with empty state
-        }
-    }
-    
-    private async Task CheckAuthentication()
-    {
-        try
-        {
-            var isProtected = await SecurityService.IsProtectedAsync();
-            if (isProtected)
-            {
-                Console.WriteLine("App is protected, redirecting to login");
-                Navigation.NavigateTo("/login");
-                return;
-            }
-            Console.WriteLine("App is not protected, proceeding to dashboard");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Authentication check failed: {ex.Message}");
-            // If we can't check protection, assume not protected to avoid blocking
         }
     }
     

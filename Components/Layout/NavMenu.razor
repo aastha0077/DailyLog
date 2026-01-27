@@ -42,14 +42,26 @@
             <i class="bi bi-gear me-3 fs-5"></i>
             <span class="fw-medium">Settings</span>
         </a>
+
+        <button class="nav-link d-flex align-items-center text-danger border-0 bg-transparent mt-auto" @onclick="HandleLogout">
+            <i class="bi bi-box-arrow-right me-3 fs-5"></i>
+            <span class="fw-medium">Logout</span>
+        </button>
     </nav>
 </div>
 
 @inject NavigationManager NavigationManager
+@inject SecurityService SecurityService
 
 @code {
     private string GetActiveClass(string href)
     {
         return NavigationManager.Uri.Contains(href) ? "active bg-primary text-white" : "text-dark";
+    }
+
+    private void HandleLogout()
+    {
+        SecurityService.Logout();
+        NavigationManager.NavigateTo("/login");
     }
 }

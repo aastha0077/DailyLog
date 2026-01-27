@@ -6,8 +6,9 @@ namespace MyJournals.Database;
 
 public class AppDatabase
 {
-    private const string DatabaseFilename = "dailylog.db3";
+    private const string DatabaseFilename = "dailylog_.db3";
     private SQLiteAsyncConnection? _connection;
+    private readonly SemaphoreSlim _initializationSemaphore = new SemaphoreSlim(1, 1);
     
     public SQLiteAsyncConnection Connection
     {
@@ -50,10 +51,12 @@ public class AppDatabase
     public async Task InitializeAsync()
     {
         if (_isInitialized) return;
-        var databasePath = Path.Combine(FileSystem.AppDataDirectory, DatabaseFilename);
-
+        
+        await _initializationSemaphore.WaitAsync();
         try
         {
+            if (_isInitialized) return;
+            var databasePath = GetDatabasePath();
             Debug.WriteLine($"Starting database initialization...");
             Debug.WriteLine($"Database file path: {databasePath}");
 
@@ -84,11 +87,9 @@ public class AppDatabase
                 await SeedMoodsAsync();
             }
 
-            // Initialize user settings if empty
-            if (await Connection.Table<UserSettings>().CountAsync() == 0)
-            {
-                await Connection.InsertAsync(new UserSettings { IsProtected = false, Theme = "Light" });
-            }
+            // UserSettings is now handled exclusively by SecurityService to avoid conflicts
+            await Connection.CreateTableAsync<UserSettings>();
+            Debug.WriteLine("UserSettings table verified");
 
             // Final verification
             var finalMoodCount = await Connection.Table<Mood>().CountAsync();
@@ -110,6 +111,7 @@ public class AppDatabase
                 await Connection.CloseAsync();
                 _connection = null;
 
+                var databasePath = Path.Combine(FileSystem.AppDataDirectory, DatabaseFilename);
                 if (File.Exists(databasePath))
                 {
                     File.Delete(databasePath);
@@ -128,6 +130,7 @@ public class AppDatabase
                     Theme = "Light"
                 });
                 Debug.WriteLine("Database recreated successfully");
+                _isInitialized = true;
             }
             catch (Exception retryEx)
             {
@@ -135,6 +138,10 @@ public class AppDatabase
                 Debug.WriteLine($"Recreation stack trace: {retryEx.StackTrace}");
                 throw;
             }
+        }
+        finally
+        {
+            _initializationSemaphore.Release();
         }
     }
 

@@ -50,7 +50,8 @@
             }
             else
             {
-                SecurityService.Authenticate();
+                // Auto-login for unprotected journals
+                await SecurityService.LoginAsync("");
                 Navigation.NavigateTo("/dashboard");
             }
         }

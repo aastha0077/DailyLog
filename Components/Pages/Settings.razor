@@ -123,16 +123,21 @@
                 <div class="modal-body py-4">
                     @if (!string.IsNullOrEmpty(statusMessage))
                     {
-                        <div class="alert alert-info small">@statusMessage</div>
+                        <div class="alert @(statusMessage.Contains("Success") ? "alert-success" : "alert-info") small animate-fade-in">
+                            <i class="bi @(statusMessage.Contains("Success") ? "bi-check-circle-fill" : "bi-info-circle-fill") me-2"></i>
+                            @statusMessage
+                        </div>
                     }
                     <div class="mb-3 text-center">
-                        <label class="form-label small fw-bold">Enter 6-digit PIN</label>
-                        <input type="password" class="form-control form-control-lg text-center" @bind="newPIN" maxlength="6" />
+                        <label class="form-label small fw-bold">Enter 4-6 digit PIN</label>
+                        <input type="password" class="form-control form-control-lg text-center" 
+                               @bind="newPIN" @bind:event="oninput" maxlength="6" 
+                               placeholder="••••" />
                     </div>
                 </div>
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-light" @onclick="CloseDialog">Cancel</button>
-                    <button type="button" class="btn btn-primary px-4" @onclick="SavePIN">Save</button>
+                    <button type="button" class="btn btn-primary px-4" @onclick="SavePIN">Set PIN Now</button>
                 </div>
             </div>
         </div>
@@ -148,6 +153,9 @@
     private string newPIN = "";
     private string statusMessage = "";
     private string currentTheme = "Light";
+    
+    private string? exportMessage;
+    private bool exportSuccess;
     
     private DateTime exportStartDate = DateTime.Today.AddMonths(-1);
     private DateTime exportEndDate = DateTime.Today;
@@ -169,9 +177,13 @@
     private async Task ExportPdf()
     {
         isExporting = true;
+        exportMessage = null;
         try 
         {
             var path = await ExportService.ExportToPdfAsync(exportStartDate, exportEndDate);
+            exportSuccess = true;
+            exportMessage = $"Success! PDF saved to: {path}";
+            
             await Microsoft.Maui.ApplicationModel.Launcher.OpenAsync(new Microsoft.Maui.ApplicationModel.OpenFileRequest
             {
                 File = new Microsoft.Maui.Storage.ReadOnlyFile(path)
@@ -179,7 +191,8 @@
         }
         catch(Exception ex)
         {
-            statusMessage = $"Export failed: {ex.Message}";
+            exportSuccess = false;
+            exportMessage = $"Export failed: {ex.Message}";
         }
         finally { isExporting = false; }
     }
@@ -195,15 +208,20 @@
 
     private async Task SavePIN()
     {
-        if (newPIN.Length != 6 || !int.TryParse(newPIN, out _))
+        if (string.IsNullOrWhiteSpace(newPIN) || newPIN.Length < 4 || newPIN.Length > 6 || !int.TryParse(newPIN, out _))
         {
-            statusMessage = "PIN must be 6 digits.";
+            statusMessage = "PIN must be 4-6 numeric digits.";
             return;
         }
 
         await SecurityService.SetPINAsync(newPIN);
+        statusMessage = "Success! PIN updated.";
+        StateHasChanged();
+        
+        await Task.Delay(1500); // Give user time to see success
         showPINDialog = false;
         userSettings = await SecurityService.GetUserSettingsAsync();
+        newPIN = "";
     }
 
     private async Task DisableProtection()
