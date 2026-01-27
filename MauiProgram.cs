@@ -39,7 +39,6 @@ public static class MauiProgram
         SQLitePCL.Batteries_V2.Init();
         Console.WriteLine("SQLite initialized successfully");
 
-
         return app;
     }
 }

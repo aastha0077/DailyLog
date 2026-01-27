@@ -1,15 +1,60 @@
 @inherits LayoutComponentBase
+@inject NavigationManager Navigation
+@inject SecurityService SecurityService
+@inject IJSRuntime JSRuntime
+@implements IDisposable
 
 <div class="app-container">
-    <!-- Modern Sidebar -->
-    <aside class="sidebar">
-        <NavMenu />
-    </aside>
+    @if (ShouldShowSidebar)
+    {
+        <aside class="sidebar">
+            <NavMenu />
+        </aside>
+    }
 
-    <!-- Main Content Area -->
-    <main class="main-content">
+    <main class="main-content @(ShouldShowSidebar ? "" : "full-width")">
         <div class="content-wrapper">
-            @Body  @* This renders the page content *@
+            @Body
         </div>
     </main>
+
+    
 </div>
+
+@code {
+    private bool ShouldShowSidebar => !Navigation.Uri.Contains("/login") && !Navigation.Uri.Contains("/startup");
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var theme = await SecurityService.GetCurrentThemeAsync();
+            await JSRuntime.InvokeVoidAsync("setTheme", theme);
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        Navigation.LocationChanged += OnLocationChanged;
+        CheckSecurity();
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        CheckSecurity();
+        StateHasChanged();
+    }
+
+    private void CheckSecurity()
+    {
+        if (Navigation.Uri.Contains("/login") || Navigation.Uri.Contains("/startup"))
+            return;
+
+        if (!SecurityService.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/login");
+        }
+    }
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
+}

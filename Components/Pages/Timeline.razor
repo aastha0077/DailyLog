@@ -63,17 +63,27 @@
             @foreach (var entry in entries)
             {
                 <div class="col-12 mb-3">
-                    <div class="card shadow-sm" style="cursor: pointer;" @onclick="() => NavigateToEntry(entry)">
+                    <div class="card shadow-sm border-0" style="cursor: pointer;" @onclick="() => NavigateToEntry(entry)">
                         <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <small class="text-primary fw-semibold">@entry.EntryDate.ToString("MMMM dd, yyyy")</small>
-                                <small class="text-muted">@entry.UpdatedAt.ToString("MMM dd, HH:mm")</small>
-                            </div>
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <small class="text-primary fw-semibold">@entry.EntryDate.ToString("MMMM dd, yyyy")</small>
+                                        <small class="text-muted">@entry.UpdatedAt.ToString("MMM dd, HH:mm")</small>
+                                    </div>
 
-                            @if (!string.IsNullOrEmpty(entry.Title))
-                            {
-                                <h5 class="card-title mb-2">@entry.Title</h5>
-                            }
+                                    @if (!string.IsNullOrEmpty(entry.Title))
+                                    {
+                                        <h5 class="card-title mb-2">@entry.Title</h5>
+                                    }
+                                </div>
+                                <button class="btn btn-outline-danger btn-sm border-0 ms-3" 
+                                        @onclick="() => DeleteEntry(entry)" 
+                                        @onclick:stopPropagation="true"
+                                        title="Delete Entry">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
 
                             <p class="card-text text-muted mb-3">@GetPreview(entry.Content)</p>
 
@@ -85,7 +95,7 @@
                                         <small class="badge bg-secondary">@entry.Category</small>
                                     }
                                 </div>
-                                <small class="text-muted">Click to view</small>
+                                <small class="text-primary small">View details →</small>
                             </div>
                         </div>
                     </div>
@@ -121,11 +131,24 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading entries: {ex.Message}");
+            Console.WriteLine($"Error loading: {ex.Message}");
         }
         finally
         {
             isLoading = false;
+        }
+    }
+
+    private async Task DeleteEntry(JournalEntry entry)
+    {
+        try 
+        {
+            await JournalService.DeleteEntryAsync(entry.Id);
+            await LoadEntries();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Delete failed: {ex.Message}");
         }
     }
     

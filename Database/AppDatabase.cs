@@ -6,7 +6,7 @@ namespace MyJournals.Database;
 
 public class AppDatabase
 {
-    private const string DatabaseFilename = "_myjournals_.db3";
+    private const string DatabaseFilename = "dailylog.db3";
     private SQLiteAsyncConnection? _connection;
     
     public SQLiteAsyncConnection Connection
@@ -79,26 +79,15 @@ public class AppDatabase
             Debug.WriteLine("JournalEntries table created successfully");
 
             // Initialize moods if empty
-            var moodCount = await Connection.Table<Mood>().CountAsync();
-            Debug.WriteLine($"Existing moods count: {moodCount}");
-            if (moodCount == 0)
+            if (await Connection.Table<Mood>().CountAsync() == 0)
             {
                 await SeedMoodsAsync();
-                var newMoodCount = await Connection.Table<Mood>().CountAsync();
-                Debug.WriteLine($"Moods seeded successfully. New count: {newMoodCount}");
             }
 
             // Initialize user settings if empty
-            var settingsCount = await Connection.Table<UserSettings>().CountAsync();
-            Debug.WriteLine($"Existing settings count: {settingsCount}");
-            if (settingsCount == 0)
+            if (await Connection.Table<UserSettings>().CountAsync() == 0)
             {
-                await Connection.InsertAsync(new UserSettings
-                {
-                    IsProtected = false,
-                    Theme = "Light"
-                });
-                Debug.WriteLine("UserSettings initialized successfully");
+                await Connection.InsertAsync(new UserSettings { IsProtected = false, Theme = "Light" });
             }
 
             // Final verification
@@ -268,21 +257,16 @@ public class AppDatabase
     {
         var moods = new List<Mood>
         {
-            // Positive
             new Mood { MoodType = MoodType.Happy, Category = MoodCategory.Positive },
             new Mood { MoodType = MoodType.Excited, Category = MoodCategory.Positive },
             new Mood { MoodType = MoodType.Relaxed, Category = MoodCategory.Positive },
             new Mood { MoodType = MoodType.Grateful, Category = MoodCategory.Positive },
             new Mood { MoodType = MoodType.Confident, Category = MoodCategory.Positive },
-
-            // Neutral
             new Mood { MoodType = MoodType.Calm, Category = MoodCategory.Neutral },
             new Mood { MoodType = MoodType.Thoughtful, Category = MoodCategory.Neutral },
             new Mood { MoodType = MoodType.Curious, Category = MoodCategory.Neutral },
             new Mood { MoodType = MoodType.Nostalgic, Category = MoodCategory.Neutral },
             new Mood { MoodType = MoodType.Bored, Category = MoodCategory.Neutral },
-
-            // Negative
             new Mood { MoodType = MoodType.Sad, Category = MoodCategory.Negative },
             new Mood { MoodType = MoodType.Angry, Category = MoodCategory.Negative },
             new Mood { MoodType = MoodType.Stressed, Category = MoodCategory.Negative },
@@ -290,11 +274,6 @@ public class AppDatabase
             new Mood { MoodType = MoodType.Anxious, Category = MoodCategory.Negative }
         };
 
-        Debug.WriteLine($"Seeding {moods.Count} moods...");
-        foreach (var mood in moods)
-        {
-            await Connection.InsertAsync(mood);
-            Debug.WriteLine($"Inserted mood: {mood.MoodType} ({mood.Category})");
-        }
+        await Connection.InsertAllAsync(moods);
     }
 }

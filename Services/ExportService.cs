@@ -1,6 +1,5 @@
 using MyJournals.Models;
-using MyJournals.Services;
-using System.Text;
+using SkiaSharp;
 
 namespace MyJournals.Services;
 
@@ -13,65 +12,84 @@ public class ExportService
         _journalService = journalService;
     }
     
-    public async Task<string> GeneratePdfContentAsync(DateTime startDate, DateTime endDate)
+    public async Task<string> ExportToPdfAsync(DateTime startDate, DateTime endDate)
     {
         var entries = await _journalService.GetEntriesByDateRangeAsync(startDate, endDate);
-        var sb = new StringBuilder();
+        var fileName = $"journal_export_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+        var filePath = Path.Combine(FileSystem.CacheDirectory, fileName);
         
-        sb.AppendLine("<!DOCTYPE html>");
-        sb.AppendLine("<html>");
-        sb.AppendLine("<head>");
-        sb.AppendLine("<meta charset='utf-8' />");
-        sb.AppendLine("<title>My Journals Export</title>");
-        sb.AppendLine("<style>");
-        sb.AppendLine("body { font-family: Arial, sans-serif; margin: 40px; }");
-        sb.AppendLine(".entry { margin-bottom: 30px; page-break-inside: avoid; }");
-        sb.AppendLine(".entry-header { border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 15px; }");
-        sb.AppendLine(".entry-date { font-size: 18px; font-weight: bold; }");
-        sb.AppendLine(".entry-title { font-size: 16px; margin-top: 5px; }");
-        sb.AppendLine(".entry-content { margin-top: 15px; line-height: 1.6; }");
-        sb.AppendLine(".entry-meta { color: #666; font-size: 12px; margin-top: 10px; }");
-        sb.AppendLine("</style>");
-        sb.AppendLine("</head>");
-        sb.AppendLine("<body>");
-        sb.AppendLine($"<h1>My Journals Export</h1>");
-        sb.AppendLine($"<p>Export Date Range: {startDate:yyyy-MM-dd} to {endDate:yyyy-MM-dd}</p>");
-        sb.AppendLine($"<p>Total Entries: {entries.Count}</p>");
-        sb.AppendLine("<hr />");
-        
-        foreach (var entry in entries)
+        using (var stream = new SKFileWStream(filePath))
+        using (var document = SKDocument.CreatePdf(stream))
         {
-            sb.AppendLine("<div class='entry'>");
-            sb.AppendLine($"<div class='entry-header'>");
-            sb.AppendLine($"<div class='entry-date'>{entry.EntryDate:MMMM dd, yyyy}</div>");
-            if (!string.IsNullOrEmpty(entry.Title))
+            var paint = new SKPaint { TextSize = 12, Color = SKColors.Black, IsAntialias = true };
+            var titlePaint = new SKPaint { TextSize = 24, Color = SKColors.DarkBlue, IsAntialias = true };
+
+            using (var canvas = document.BeginPage(595, 842))
             {
-                sb.AppendLine($"<div class='entry-title'>{System.Security.SecurityElement.Escape(entry.Title)}</div>");
+                float y = 50;
+                float x = 50;
+                float width = 495;
+
+                canvas.DrawText("Journal Entries", x, y, titlePaint);
+                y += 40;
+                
+                canvas.DrawText($"{startDate:yyyy-MM-dd} to {endDate:yyyy-MM-dd}", x, y, paint);
+                y += 30;
+
+                if (entries.Count == 0)
+                {
+                    canvas.DrawText("No entries found.", x, y, paint);
+                }
+                else
+                {
+                    foreach (var entry in entries)
+                    {
+                        if (y > 750) break; 
+
+                        canvas.DrawText(entry.EntryDate.ToString("yyyy-MM-dd"), x, y, new SKPaint { TextSize = 14, Color = SKColors.Gray, IsAntialias = true });
+                        y += 20;
+
+                        if (!string.IsNullOrEmpty(entry.Title))
+                        {
+                            canvas.DrawText(entry.Title, x, y, new SKPaint { TextSize = 13, IsAntialias = true });
+                            y += 18;
+                        }
+
+                        var lines = WrapText(entry.Content ?? "", paint, width);
+                        foreach (var line in lines)
+                        {
+                            if (y > 800) break;
+                            canvas.DrawText(line, x, y, paint);
+                            y += 15;
+                        }
+                        y += 20;
+                    }
+                }
+                document.EndPage();
             }
-            sb.AppendLine("</div>");
-            
-            sb.AppendLine($"<div class='entry-content'>{System.Security.SecurityElement.Escape(entry.Content).Replace("\n", "<br />")}</div>");
-            
-            sb.AppendLine("<div class='entry-meta'>");
-            sb.AppendLine($"Created: {entry.CreatedAt:yyyy-MM-dd HH:mm} | Updated: {entry.UpdatedAt:yyyy-MM-dd HH:mm}");
-            sb.AppendLine($" | Words: {entry.WordCount}");
-            if (!string.IsNullOrEmpty(entry.Category))
-            {
-                sb.AppendLine($" | Category: {System.Security.SecurityElement.Escape(entry.Category)}");
-            }
-            var tags = _journalService.GetTags(entry);
-            if (tags.Count > 0)
-            {
-                sb.AppendLine($" | Tags: {string.Join(", ", tags.Select(t => System.Security.SecurityElement.Escape(t)))}");
-            }
-            sb.AppendLine("</div>");
-            
-            sb.AppendLine("</div>");
+            document.Close();
         }
-        
-        sb.AppendLine("</body>");
-        sb.AppendLine("</html>");
-        
-        return sb.ToString();
+        return filePath;
+    }
+
+    private List<string> WrapText(string text, SKPaint paint, float maxWidth)
+    {
+        var words = text.Split(' ');
+        var lines = new List<string>();
+        var currentLine = "";
+
+        foreach (var word in words)
+        {
+            var testLine = string.IsNullOrEmpty(currentLine) ? word : $"{currentLine} {word}";
+            if (paint.MeasureText(testLine) <= maxWidth)
+                currentLine = testLine;
+            else
+            {
+                lines.Add(currentLine);
+                currentLine = word;
+            }
+        }
+        if (!string.IsNullOrEmpty(currentLine)) lines.Add(currentLine);
+        return lines;
     }
 }
