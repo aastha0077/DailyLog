@@ -24,7 +24,6 @@
     --shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
 }
 
-/* Force dark mode colors globally - Super Aggressive */
 .dark-theme,
 html.dark-theme,
 .dark-theme body,
@@ -61,7 +60,6 @@ html.dark-theme,
     border-color: var(--border-color) !important;
 }
 
-/* Ensure all text classes respects theme - Ultra Comprehensive */
 .dark-theme .result-title,
 .dark-theme .result-preview,
 .dark-theme .results-count,
@@ -385,54 +383,81 @@ body:not(.dark-theme) .badge.border {
 }
 
 /* Dark Mode Calendar Overrides */
+.dark-theme .calendar-container {
+    background-color: #000000 !important;
+}
+
+.dark-theme .calendar-header {
+    background: #000000 !important;
+    border-color: var(--border-color) !important;
+}
+
+.dark-theme .calendar-header h2 {
+    color: #ffffff !important;
+}
+
 .dark-theme .calendar-header .btn-nav {
-    background: #1c1c1e;
-    color: #ffffff;
-    border-color: var(--border-color);
+    background: #1c1c1e !important;
+    color: #ffffff !important;
+    border-color: var(--border-color) !important;
 }
 
 .dark-theme .calendar-header .btn-nav:hover {
-    background: linear-gradient(135deg, #4d9fff 0%, #3b82f6 100%);
-    border-color: #4d9fff;
-    color: #000000;
+    background: linear-gradient(135deg, #4d9fff 0%, #3b82f6 100%) !important;
+    border-color: #4d9fff !important;
+    color: #000000 !important;
+}
+
+.dark-theme .calendar-grid {
+    background: #000000 !important;
+    border-color: var(--border-color) !important;
+}
+
+.dark-theme .calendar-weekday {
+    color: var(--text-secondary) !important;
 }
 
 .dark-theme .calendar-day {
-    background: #1c1c1e;
-    border-color: var(--border-color);
+    background: #1c1c1e !important;
+    border-color: var(--border-color) !important;
+}
+
+.dark-theme .calendar-day .day-number {
+    color: #ffffff !important;
 }
 
 .dark-theme .calendar-day:not(.empty):hover {
-    background: linear-gradient(135deg, #4d9fff 0%, #3b82f6 100%);
-    border-color: #4d9fff;
-    box-shadow: 0 8px 24px rgba(77, 159, 255, 0.3);
+    background: linear-gradient(135deg, #4d9fff 0%, #3b82f6 100%) !important;
+    border-color: #4d9fff !important;
+    box-shadow: 0 8px 24px rgba(77, 159, 255, 0.3) !important;
 }
 
 .dark-theme .calendar-day:not(.empty):hover .day-number {
-    color: #000000;
+    color: #000000 !important;
 }
 
 .dark-theme .calendar-day.today {
-    border-color: #4d9fff;
-    background: rgba(77, 159, 255, 0.15);
+    border-color: #4d9fff !important;
+    background: rgba(77, 159, 255, 0.15) !important;
 }
 
 .dark-theme .calendar-day.has-entry {
-    background: linear-gradient(135deg, rgba(77, 159, 255, 0.2) 0%, rgba(59, 130, 246, 0.15) 100%);
-    border-color: #4d9fff;
+    background: linear-gradient(135deg, rgba(77, 159, 255, 0.2) 0%, rgba(59, 130, 246, 0.15) 100%) !important;
+    border-color: #4d9fff !important;
 }
 
 .dark-theme .calendar-day.has-entry:hover {
-    background: linear-gradient(135deg, #4d9fff 0%, #3b82f6 100%);
+    background: linear-gradient(135deg, #4d9fff 0%, #3b82f6 100%) !important;
 }
 
 .dark-theme .entry-indicator {
-    color: #4d9fff;
+    color: #4d9fff !important;
 }
 
 .dark-theme .calendar-day:hover .entry-indicator {
-    color: #000000;
+    color: #000000 !important;
 }
+
 
 /* Responsive Calendar */
 @media (max-width: 768px) {

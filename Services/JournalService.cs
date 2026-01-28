@@ -5,15 +5,17 @@ using SQLite;
 
 namespace MyJournals.Services;
 
-public class JournalService : BaseService
+public class JournalService
 {
-    public JournalService(AppDatabase database) : base(database)
+    private readonly AppDatabase _database;
+
+    public JournalService(AppDatabase database)
     {
+        _database = database;
     }
     
     public async Task<JournalEntry?> GetEntryByDateAsync(DateTime date)
     {
-        if (!await IsDatabaseReadyAsync()) return null;
 
         var targetDate = date.Date;
         var entries = await _database.Connection.Table<JournalEntry>().ToListAsync();
@@ -25,13 +27,11 @@ public class JournalService : BaseService
     
     public async Task<JournalEntry?> GetEntryByIdAsync(int id)
     {
-        if (!await IsDatabaseReadyAsync()) return null;
         return await _database.Connection.GetAsync<JournalEntry>(id);
     }
     
     public async Task<List<JournalEntry>> GetAllEntriesAsync()
     {
-        if (!await IsDatabaseReadyAsync()) return new List<JournalEntry>();
         return await _database.Connection.Table<JournalEntry>()
             .OrderByDescending(e => e.EntryDate)
             .ToListAsync();
@@ -39,7 +39,6 @@ public class JournalService : BaseService
     
     public async Task<List<JournalEntry>> GetEntriesByDateRangeAsync(DateTime startDate, DateTime endDate)
     {
-        if (!await IsDatabaseReadyAsync()) return new List<JournalEntry>();
 
         var entries = await _database.Connection.Table<JournalEntry>().ToListAsync();
         return entries.Where(e => e.EntryDate.Date >= startDate.Date && e.EntryDate.Date <= endDate.Date)
@@ -49,7 +48,6 @@ public class JournalService : BaseService
     
     public async Task<JournalEntry> CreateOrUpdateEntryAsync(JournalEntry entry)
     {
-        if (!await IsDatabaseReadyAsync()) throw new InvalidOperationException("Database not available");
 
         entry.UpdatedAt = DateTime.Now;
         entry.WordCount = StringHelpers.CountWords(entry.Content);
@@ -73,7 +71,6 @@ public class JournalService : BaseService
     
     public async Task DeleteEntryAsync(int id)
     {
-        if (!await IsDatabaseReadyAsync()) throw new InvalidOperationException("Database not available");
         await _database.Connection.DeleteAsync<JournalEntry>(id);
     }
     
@@ -89,7 +86,6 @@ public class JournalService : BaseService
     
     public async Task<List<JournalEntry>> SearchEntriesAsync(string searchTerm, DateTime? startDate = null, DateTime? endDate = null, List<int>? moodIds = null, List<string>? tags = null)
     {
-        if (!await IsDatabaseReadyAsync()) return new List<JournalEntry>();
 
         var entries = await GetAllEntriesAsync();
         
@@ -134,7 +130,6 @@ public class JournalService : BaseService
     
     public async Task<List<JournalEntry>> GetPaginatedEntriesAsync(int page, int pageSize)
     {
-        if (!await IsDatabaseReadyAsync()) return new List<JournalEntry>();
 
         return await _database.Connection.Table<JournalEntry>()
             .OrderByDescending(e => e.EntryDate)
@@ -145,7 +140,6 @@ public class JournalService : BaseService
     
     public async Task<int> GetTotalEntryCountAsync()
     {
-        if (!await IsDatabaseReadyAsync()) return 0;
         return await _database.Connection.Table<JournalEntry>().CountAsync();
     }
 }

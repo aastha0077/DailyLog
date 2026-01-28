@@ -63,9 +63,22 @@
         return NavigationManager.Uri.Contains(href) ? "active bg-primary text-white" : "text-dark";
     }
 
-    private void HandleLogout()
+    private async Task HandleLogout()
     {
         SecurityService.Logout();
-        NavigationManager.NavigateTo("/login");
+        
+        // Check if PIN protection is enabled
+        var isProtected = await SecurityService.IsProtectedAsync();
+        
+        if (isProtected)
+        {
+            // If PIN is set, go to login page
+            NavigationManager.NavigateTo("/login");
+        }
+        else
+        {
+            // If no PIN, just go back to dashboard
+            NavigationManager.NavigateTo("/dashboard");
+        }
     }
 }

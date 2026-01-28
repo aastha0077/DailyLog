@@ -4,15 +4,17 @@ using MyJournals.Utils;
 
 namespace MyJournals.Services;
 
-public class MoodService : BaseService
+public class MoodService
 {
-    public MoodService(AppDatabase database) : base(database)
+    private readonly AppDatabase _database;
+
+    public MoodService(AppDatabase database)
     {
+        _database = database;
     }
     
     public async Task<List<Mood>> GetAllMoodsAsync()
     {
-        if (!await IsDatabaseReadyAsync()) return new List<Mood>();
             
         return await _database.Connection.Table<Mood>()
             .OrderBy(m => m.Category)
@@ -22,7 +24,6 @@ public class MoodService : BaseService
     
     public async Task<List<Mood>> GetMoodsByCategoryAsync(MoodCategory category)
     {
-        if (!await IsDatabaseReadyAsync()) return new List<Mood>();
             
         return await _database.Connection.Table<Mood>()
             .Where(m => m.Category == category)
@@ -32,7 +33,6 @@ public class MoodService : BaseService
     
     public async Task<Mood?> GetMoodByIdAsync(int id)
     {
-        if (!await IsDatabaseReadyAsync()) return null;
         return await _database.Connection.GetAsync<Mood>(id);
     }
 

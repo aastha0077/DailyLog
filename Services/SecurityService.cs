@@ -14,24 +14,11 @@ public class SecurityService
         _database = database;
     }
 
-    private async Task<bool> IsDatabaseReadyAsync()
-    {
-        try
-        {
-            await _database.InitializeAsync();
-            return _database.DatabaseFileExists();
-        }
-        catch
-        {
-            return false;
-        }
-    }
     public void Authenticate() => IsAuthenticated = true;
     public void Logout() => IsAuthenticated = false;
 
     public async Task<bool> LoginAsync(string password)
     {
-        if (!await IsDatabaseReadyAsync()) return false;
 
         var settings = await GetUserSettingsAsync();
         
@@ -56,7 +43,6 @@ public class SecurityService
 
     public async Task<bool> IsProtectedAsync()
     {
-        if (!await IsDatabaseReadyAsync()) return false;
         var settings = await GetUserSettingsAsync();
         return settings.IsProtected;
     }
@@ -78,12 +64,6 @@ public class SecurityService
         var sanitizedPin = pin?.Trim() ?? "";
         Console.WriteLine($"[PIN_SYSTEM] SETTING NEW PIN: '{sanitizedPin}'");
         
-        if (!await IsDatabaseReadyAsync()) 
-        {
-            Console.WriteLine("[PIN_SYSTEM] DB NOT READY - abort set");
-            return;
-        }
-
         var settings = await GetUserSettingsAsync();
         settings.PIN = sanitizedPin;
         settings.IsProtected = true;
@@ -98,7 +78,6 @@ public class SecurityService
 
     public async Task DisableProtectionAsync()
     {
-        if (!await IsDatabaseReadyAsync()) return;
         var settings = await GetUserSettingsAsync();
         settings.IsProtected = false;
         settings.PIN = string.Empty;
@@ -107,7 +86,6 @@ public class SecurityService
 
     public async Task<UserSettings> GetUserSettingsAsync()
     {
-        if (!await IsDatabaseReadyAsync()) return new UserSettings { Id = 1, Theme = "Light", IsProtected = false };
 
         try 
         {
@@ -165,7 +143,6 @@ public class SecurityService
 
     public async Task SetThemeAsync(string theme)
     {
-        if (!await IsDatabaseReadyAsync()) return;
         var settings = await GetUserSettingsAsync();
         settings.Theme = theme;
         await UpdateUserSettingsAsync(settings);

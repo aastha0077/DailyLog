@@ -37,10 +37,8 @@ public static class MauiProgram
 
         var app = builder.Build();
 
-        // Initialize SQLite - CRITICAL for MacCatalyst
         SQLitePCL.Batteries_V2.Init();
         var db = app.Services.GetRequiredService<AppDatabase>();
-        Console.WriteLine($"[SYSTEM] Database initialized at: {db.GetDatabasePath()}");
         return app;
     }
 }

@@ -9,7 +9,7 @@ public class JournalEntry
     public int Id { get; set; }
     
     [NotNull, Unique]
-    public DateTime EntryDate { get; set; } // One entry per day
+    public DateTime EntryDate { get; set; }
     
     public string Title { get; set; } = string.Empty;
     
@@ -35,7 +35,7 @@ public class JournalEntry
     
     public string Category { get; set; } = string.Empty;
     
-    public string Tags { get; set; } = string.Empty; // JSON array of tag names
+    public string Tags { get; set; } = string.Empty;
     
     public int WordCount { get; set; }
 }

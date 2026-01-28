@@ -17,7 +17,6 @@ public class ExportService
         var entries = await _journalService.GetEntriesByDateRangeAsync(startDate, endDate);
         var fileName = $"journal_export_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
         
-        // Use Documents folder on Mac for better visibility
         string baseDir = FileSystem.CacheDirectory;
         #if MACCATALYST
         baseDir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
@@ -62,7 +61,13 @@ public class ExportService
                             y += 18;
                         }
 
-                        var lines = WrapText(entry.Content ?? "", paint, width);
+                        // Convert markdown to text
+                        string contentForPdf = entry.IsMarkdown 
+                            ? ConvertMarkdownToPlainText(entry.Content ?? "")
+                            : entry.Content ?? "";
+                        
+                        
+                        var lines = WrapText(contentForPdf, paint, width);
                         foreach (var line in lines)
                         {
                             if (y > 800) break;
@@ -99,4 +104,34 @@ public class ExportService
         if (!string.IsNullOrEmpty(currentLine)) lines.Add(currentLine);
         return lines;
     }
+    
+    private string ConvertMarkdownToPlainText(string markdownContent)
+    {
+        if (string.IsNullOrEmpty(markdownContent))
+            return string.Empty;
+            
+        // Convert to HTML
+        var html = MyJournals.Utils.StringHelpers.ToHtml(markdownContent);
+        
+        // Format HTML tags
+        html = System.Text.RegularExpressions.Regex.Replace(html, @"<br\s*/?>", "\n");
+        html = System.Text.RegularExpressions.Regex.Replace(html, @"</p>", "\n\n");
+        html = System.Text.RegularExpressions.Regex.Replace(html, @"</h[1-6]>", "\n");
+        html = System.Text.RegularExpressions.Regex.Replace(html, @"</li>", "\n");
+        html = System.Text.RegularExpressions.Regex.Replace(html, @"<li>", "• ");
+        html = System.Text.RegularExpressions.Regex.Replace(html, @"</blockquote>", "\n");
+        html = System.Text.RegularExpressions.Regex.Replace(html, @"<blockquote>", "\"" );
+        
+        // Remove HTML tags
+        var plainText = System.Text.RegularExpressions.Regex.Replace(html, "<.*?>", "");
+        
+        plainText = System.Net.WebUtility.HtmlDecode(plainText);
+        
+        // Clean whitespace
+        plainText = System.Text.RegularExpressions.Regex.Replace(plainText, @"[ \t]+", " ");
+        plainText = System.Text.RegularExpressions.Regex.Replace(plainText, @"\n{3,}", "\n\n");
+        
+        return plainText.Trim();
+    }
+
 }
