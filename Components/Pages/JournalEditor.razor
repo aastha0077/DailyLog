@@ -9,7 +9,6 @@
 
 <div class="container-fluid py-4">
     <form @onsubmit="SaveEntry">
-        <!-- Header Section -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
@@ -73,7 +72,6 @@
         </div>
     }
 
-    <!-- Main Content Section -->
         <div class="row">
             <div class="col-12">
                 <div class="card shadow-sm border-0">
@@ -84,7 +82,6 @@
                         </h5>
                     </div>
                     <div class="card-body p-4">
-                        <!-- Title Section -->
                         <div class="row mb-4">
                             <div class="col-12">
                                 <label for="title" class="form-label fw-semibold text-dark mb-2">
@@ -95,34 +92,56 @@
                             </div>
                         </div>
 
-                        <!-- Content Section -->
                         <div class="row mb-4">
                             <div class="col-12">
                                 <label for="content" class="form-label fw-semibold text-dark mb-3">
                                     <i class="bi bi-pencil me-1 text-secondary"></i>Content <span class="text-danger">*</span>
                                 </label>
-                                <div class="bg-light rounded p-2 mb-3">
+                                 <div class="bg-light rounded p-2 mb-3 d-flex justify-content-between align-items-center">
                                     <div class="btn-group" role="group">
                                         <button type="button" class="btn btn-sm @(entry.IsMarkdown ? "btn-outline-primary" : "btn-primary")"
-                                                @onclick="() => entry.IsMarkdown = false">
-                                            <i class="bi bi-type me-1"></i>Rich Text
+                                                @onclick="() => { entry.IsMarkdown = false; isPreviewMode = false; }">
+                                            <i class="bi bi-type me-1"></i>Plain Text
                                         </button>
                                         <button type="button" class="btn btn-sm @(entry.IsMarkdown ? "btn-primary" : "btn-outline-primary")"
                                                 @onclick="() => entry.IsMarkdown = true">
                                             <i class="bi bi-markdown me-1"></i>Markdown
                                         </button>
                                     </div>
+
+                                    @if (entry.IsMarkdown)
+                                    {
+                                        <div class="btn-group ml-auto" role="group">
+                                            <button type="button" class="btn btn-sm @(isPreviewMode ? "btn-outline-secondary" : "btn-secondary")"
+                                                    @onclick="() => isPreviewMode = false">
+                                                Write
+                                            </button>
+                                            <button type="button" class="btn btn-sm @(isPreviewMode ? "btn-secondary" : "btn-outline-secondary")"
+                                                    @onclick="() => isPreviewMode = true">
+                                                Preview
+                                            </button>
+                                        </div>
+                                    }
                                 </div>
-                                <textarea id="content" class="form-control border-0 bg-light" rows="15" @bind="entry.Content"
-                                         placeholder="Start writing your thoughts, feelings, and experiences here. Let your words flow freely..."
-                                         required style="resize: vertical; min-height: 400px;"></textarea>
+
+                                @if (isPreviewMode && entry.IsMarkdown)
+                                {
+                                    <div class="markdown-preview border rounded p-4 bg-white" style="min-height: 400px; overflow-y: auto;">
+                                        @((MarkupString)MyJournals.Utils.StringHelpers.ToHtml(entry.Content))
+                                    </div>
+                                }
+                                else
+                                {
+                                    <textarea id="content" class="form-control border-0 bg-light" rows="15" @bind="entry.Content"
+                                             placeholder="Start writing your thoughts, feelings, and experiences here. Let your words flow freely..."
+                                             required style="resize: vertical; min-height: 400px;"></textarea>
+                                }
                                 <div class="form-text text-muted mt-2">
                                     <i class="bi bi-info-circle me-1"></i>Your thoughts are safe and private here.
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Mood and Category Section -->
                         <div class="row mb-4">
                             <div class="col-12">
                                 <h6 class="fw-bold text-dark mb-3 d-flex align-items-center">
@@ -202,7 +221,6 @@
                             </div>
                         </div>
 
-                        <!-- Tags Section -->
                         <div class="col-12 mb-4">
                             <h6 class="fw-bold text-dark mb-3 d-flex align-items-center">
                                 <i class="bi bi-tags me-2 text-success"></i>Tags & Organization
@@ -339,35 +357,28 @@
     private bool isDeleting = false;
     private int secondaryMood1Value = 0;
     private int secondaryMood2Value = 0;
+    private bool isPreviewMode = false;
     private bool isEditMode => entry.Id > 0;
     
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            Console.WriteLine("JournalEditor initializing...");
             allMoods = await MoodService.GetAllMoodsAsync();
-            Console.WriteLine($"Loaded {allMoods?.Count ?? 0} moods");
-
             if (allMoods == null || allMoods.Count == 0)
             {
                 errorMessage = "Failed to load mood data. Please restart the app.";
-                Console.WriteLine("ERROR: No moods loaded");
                 return;
             }
 
             moodsByCategory = allMoods.GroupBy(m => m.Category)
                 .ToDictionary(g => g.Key, g => g.ToList());
-            Console.WriteLine($"Grouped moods into {moodsByCategory.Count} categories");
 
             await LoadEntry();
-            Console.WriteLine("JournalEditor initialization completed");
         }
         catch (Exception ex)
         {
             errorMessage = $"Failed to initialize journal editor: {ex.Message}";
-            Console.WriteLine($"JournalEditor initialization error: {ex.Message}");
-            Console.WriteLine($"Stack trace: {ex.StackTrace}");
         }
     }
     
@@ -382,18 +393,15 @@
                 if (DateTime.TryParse(date, out var parsedDate))
                 {
                     entryDate = parsedDate;
-                    Console.WriteLine($"Parsed date parameter: {date} -> {entryDate}");
                 }
                 else
                 {
                     entryDate = DateTime.Today;
-                    Console.WriteLine($"Failed to parse date parameter: {date}, using today");
                 }
             }
             else
             {
                 entryDate = DateTime.Today;
-                Console.WriteLine("No date parameter provided, using today");
             }
 
             var existing = await JournalService.GetEntryByDateAsync(entryDate);
@@ -401,7 +409,6 @@
             {
                 entry = existing;
                 selectedTags = JournalService.GetTags(entry);
-                Console.WriteLine($"Loaded existing entry for {entryDate:yyyy-MM-dd}");
             }
             else
             {
@@ -411,7 +418,6 @@
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now
                 };
-                Console.WriteLine($"Created new entry for {entryDate:yyyy-MM-dd}");
             }
 
             // Handle nullable SecondaryMood fields
@@ -421,8 +427,6 @@
         catch (Exception ex)
         {
             errorMessage = $"Failed to load entry: {ex.Message}";
-            Console.WriteLine($"LoadEntry error: {ex.Message}");
-            Console.WriteLine($"Stack trace: {ex.StackTrace}");
         }
     }
     
@@ -473,7 +477,6 @@
 
         try
         {
-            Console.WriteLine("Saving entry...");
             JournalService.SetTags(entry, selectedTags);
 
             // Update secondary mood values
@@ -485,9 +488,8 @@
             selectedTags = JournalService.GetTags(entry);
 
             successMessage = "Entry saved successfully!";
-            Console.WriteLine("Entry saved successfully");
 
-            // Clear message after 3 seconds
+            // Clear message after delay
             _ = Task.Delay(3000).ContinueWith(_ => {
                 successMessage = null;
                 InvokeAsync(StateHasChanged);
@@ -496,8 +498,6 @@
         catch (Exception ex)
         {
             errorMessage = $"Error saving entry: {ex.Message}";
-            Console.WriteLine($"SaveEntry error: {ex.Message}");
-            Console.WriteLine($"Stack trace: {ex.StackTrace}");
         }
         finally
         {

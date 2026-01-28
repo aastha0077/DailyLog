@@ -86,7 +86,16 @@
                                 </button>
                             </div>
 
-                            <p class="card-text text-muted mb-3">@GetPreview(entry.Content)</p>
+                            <div class="card-text text-dark mb-3 @(entry.IsMarkdown ? "markdown-preview" : "")">
+                                @if (entry.IsMarkdown)
+                                {
+                                    @((MarkupString)MyJournals.Utils.StringHelpers.ToHtml(GetPreview(entry.Content)))
+                                }
+                                else
+                                {
+                                    @GetPreview(entry.Content)
+                                }
+                            </div>
 
                             <div class="d-flex justify-content-between align-items-center">
                                 <div class="d-flex gap-2">
@@ -130,9 +139,8 @@
             
             entries = await JournalService.GetPaginatedEntriesAsync(currentPage, pageSize);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.WriteLine($"Error loading: {ex.Message}");
         }
         finally
         {
@@ -150,9 +158,8 @@
             await JournalService.DeleteEntryAsync(entry.Id);
             await LoadEntries();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.WriteLine($"Delete failed: {ex.Message}");
         }
     }
     
@@ -184,8 +191,7 @@
         if (string.IsNullOrWhiteSpace(content))
             return "No content";
         
-        var preview = content.Length > 200 ? content.Substring(0, 200) + "..." : content;
-        return preview.Replace("\n", " ");
+        var preview = content.Length > 300 ? content.Substring(0, 300) + "..." : content;
+        return preview;
     }
 }
-

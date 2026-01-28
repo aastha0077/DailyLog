@@ -1,3 +1,5 @@
+using Markdig;
+
 namespace MyJournals.Utils;
 
 public static class StringHelpers
@@ -71,5 +73,16 @@ public static class StringHelpers
             return "[]";
         
         return System.Text.Json.JsonSerializer.Serialize(tags);
+    }
+    public static string ToHtml(string markdown)
+    {
+        if (string.IsNullOrWhiteSpace(markdown))
+            return string.Empty;
+
+        var pipeline = new Markdig.MarkdownPipelineBuilder()
+            .UseAdvancedExtensions()
+            .Build();
+
+        return Markdig.Markdown.ToHtml(markdown, pipeline);
     }
 }

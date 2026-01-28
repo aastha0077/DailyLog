@@ -1,5 +1,3 @@
-/* Beautiful Modern Journal App Styles */
-
 :root {
     --primary-color: #0d6efd;
     --primary-hover: #0b5ed7;
@@ -26,7 +24,6 @@
 }
 
 
-/* Global font and theme */
 body {
     font-family: 'Inter', -apple-system, system-ui, sans-serif;
     background-color: #f0f2f5;
@@ -74,7 +71,6 @@ body {
     z-index: 1;
 }
 
-/* Enhanced Navigation */
 .nav-header {
     padding: 2rem 1.5rem 1.5rem;
     border-bottom: 1px solid rgba(13, 110, 253, 0.1);
@@ -195,7 +191,6 @@ body {
     opacity: 0.7;
 }
 
-/* Enhanced Dashboard */
 .dashboard-container {
     width: 100%;
 }
@@ -283,7 +278,6 @@ body {
     font-size: 1.8rem;
 }
 
-/* Beautiful Cards */
 .card {
     background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
     border: 1px solid rgba(13, 110, 253, 0.1);
@@ -305,7 +299,6 @@ body {
     color: #212529;
 }
 
-/* Enhanced Buttons */
 .btn {
     border-radius: 12px;
     font-weight: 600;
@@ -355,7 +348,6 @@ body {
     box-shadow: 0 8px 24px rgba(13, 110, 253, 0.3);
 }
 
-/* Gradient Utilities */
 .bg-gradient-primary {
     background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%) !important;
 }
@@ -380,7 +372,6 @@ body {
     background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important;
 }
 
-/* Text Gradient Utilities */
 .bg-gradient-primary.bg-clip-text {
     background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
     -webkit-background-clip: text;
@@ -388,7 +379,6 @@ body {
     background-clip: text;
 }
 
-/* Progress Bar Gradients */
 .bg-gradient-success.progress-bar {
     background: linear-gradient(135deg, #198754 0%, #20c997 100%) !important;
 }
@@ -401,7 +391,6 @@ body {
     background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%) !important;
 }
 
-/* Enhanced Forms */
 .form-control {
     border-radius: 12px;
     border: 2px solid rgba(13, 110, 253, 0.1);
@@ -432,7 +421,6 @@ body {
     transform: none !important;
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
     .app-container {
         margin: 10px;
@@ -505,7 +493,6 @@ body {
     }
 }
 
-/* Animations */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -522,7 +509,6 @@ body {
     animation: fadeIn 0.5s ease forwards;
 }
 
-/* Custom Scrollbar */
 ::-webkit-scrollbar {
     width: 8px;
 }
@@ -540,7 +526,6 @@ body {
     background: #0d6efd;
 }
 
-/* Glassmorphism utility */
 .glass {
     background: rgba(255, 255, 255, 0.7) !important;
     backdrop-filter: blur(10px);
@@ -548,7 +533,6 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
 }
 
-/* High-end Hover Effects */
 .hover-lift {
     transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
@@ -558,7 +542,6 @@ body {
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }
 
-/* Blazor Error UI - Must be hidden by default */
 #blazor-error-ui {
     background: #fff3cd;
     bottom: 0;
@@ -578,4 +561,114 @@ body {
     position: absolute;
     right: 0.75rem;
     top: 0.5rem;
+}
+
+.markdown-preview {
+    font-family: inherit;
+    line-height: 1.6;
+    color: #212529;
+}
+
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    font-weight: 700;
+}
+
+.markdown-preview h1 {
+    font-size: 2rem;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 0.5rem;
+}
+
+.markdown-preview h2 {
+    font-size: 1.5rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.3rem;
+}
+
+.markdown-preview h3 {
+    font-size: 1.25rem;
+}
+
+.markdown-preview p {
+    margin-bottom: 1rem;
+}
+
+.markdown-preview ul,
+.markdown-preview ol {
+    margin-bottom: 1rem;
+    padding-left: 2rem;
+}
+
+.markdown-preview blockquote {
+    border-left: 4px solid #0d6efd;
+    padding-left: 1rem;
+    color: #666;
+    font-style: italic;
+    margin: 1.5rem 0;
+}
+
+.markdown-preview code {
+    background: #f1f3f5;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+.markdown-preview pre {
+    background: #212529;
+    color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+}
+
+.markdown-preview pre code {
+    background: transparent;
+    padding: 0;
+    color: inherit;
+}
+
+.markdown-preview hr {
+    margin: 2rem 0;
+    border: 0;
+    border-top: 2px solid #eee;
+}
+
+.markdown-preview img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+/* Compact Markdown for Previews */
+.card-body .markdown-preview h1,
+.result-item .markdown-preview h1 {
+    font-size: 1.25rem;
+    border: none;
+    margin-top: 0.5rem;
+}
+
+.card-body .markdown-preview h2,
+.result-item .markdown-preview h2 {
+    font-size: 1.1rem;
+    border: none;
+    margin-top: 0.4rem;
+}
+
+.card-body .markdown-preview h3,
+.result-item .markdown-preview h3 {
+    font-size: 1rem;
+    margin-top: 0.3rem;
+}
+
+.card-body .markdown-preview p,
+.result-item .markdown-preview p {
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
 }
