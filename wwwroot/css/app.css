@@ -1150,6 +1150,23 @@ body {
     color: var(--text-secondary);
 }
 
+/* Search Highlight Styling */
+mark {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 0.125rem 0.25rem;
+    border-radius: 3px;
+    font-weight: 600;
+}
+
+/* Dark Mode Search Highlight */
+.dark-theme mark {
+    background-color: #4d9fff;
+    color: #000000;
+    font-weight: 600;
+}
+
+
 
 .markdown-preview h1,
 .markdown-preview h2,
