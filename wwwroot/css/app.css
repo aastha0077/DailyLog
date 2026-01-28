@@ -790,6 +790,42 @@ body {
     color: white !important;
 }
 
+/* Button Size Variants */
+.btn-sm {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem;
+    min-height: 36px;
+}
+
+.btn-lg {
+    padding: 0.875rem 2rem !important;
+    font-size: 1rem;
+    min-height: 48px;
+}
+
+/* Button Groups */
+.btn-group .btn {
+    padding: 0.5rem 1.25rem !important;
+    min-height: 38px;
+}
+
+.btn-group .btn-sm {
+    padding: 0.5rem 1rem !important;
+    min-height: 36px;
+}
+
+/* Outline Buttons */
+.btn-outline-secondary,
+.btn-outline-primary {
+    padding: 0.75rem 1.5rem !important;
+}
+
+.btn-outline-secondary.btn-lg,
+.btn-outline-primary.btn-lg {
+    padding: 0.875rem 2rem !important;
+}
+
+
 
 .btn-outline-primary {
     background: transparent;
