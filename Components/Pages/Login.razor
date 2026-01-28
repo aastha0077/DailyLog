@@ -2,7 +2,7 @@
 @inject SecurityService SecurityService
 @inject NavigationManager Navigation
 
-<PageTitle>Login - My Journals</PageTitle>
+<PageTitle>Login - Daily Log</PageTitle>
 
 <div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
     <div class="card shadow-sm border-0 animate-fade-in" style="max-width: 400px; width: 100%;">
@@ -10,7 +10,7 @@
             <div class="mb-4">
                 <span class="display-4">🔐</span>
                 <h2 class="fw-bold mt-3">Private Access</h2>
-                <p class="text-muted">Please enter your password to unlock your journal.</p>
+                <p class="text-muted">Please enter your password to unlock your daily log.</p>
             </div>
             
             @if (!string.IsNullOrEmpty(errorMessage))
@@ -30,7 +30,7 @@
                 </div>
 
                 <button type="submit" class="btn btn-primary w-100 py-3 mt-2 fw-bold shadow-sm">
-                    Unlock Journal
+                    Unlock Daily Log
                 </button>
             </EditForm>
         </div>

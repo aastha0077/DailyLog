@@ -5,7 +5,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 
-<PageTitle>Journal Entry - My Journals</PageTitle>
+<PageTitle>@(isEditMode ? "Edit" : "New") Entry - Daily Log</PageTitle>
 
 <div class="container-fluid py-4">
     <form @onsubmit="SaveEntry">
@@ -339,6 +339,7 @@
     private bool isDeleting = false;
     private int secondaryMood1Value = 0;
     private int secondaryMood2Value = 0;
+    private bool isEditMode => entry.Id > 0;
     
     protected override async Task OnInitializedAsync()
     {
@@ -444,7 +445,7 @@
         selectedTags.Remove(tag);
     }
     
-    private async Task HandleTagInput(KeyboardEventArgs e)
+    private void HandleTagInput(KeyboardEventArgs e)
     {
         if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(newTagInput))
         {

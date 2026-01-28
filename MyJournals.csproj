@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
     <PropertyGroup>
-        <!-- Target ONLY MacCatalyst -->
         <TargetFrameworks>net8.0-maccatalyst</TargetFrameworks>
 
         <OutputType>Exe</OutputType>
@@ -12,7 +11,7 @@
         <EnableDefaultCssItems>false</EnableDefaultCssItems>
         <Nullable>enable</Nullable>
 
-        <ApplicationTitle>MyJournals</ApplicationTitle>
+        <ApplicationTitle>Daily Log</ApplicationTitle>
         <ApplicationId>com.companyname.myjournals</ApplicationId>
         <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
         <ApplicationVersion>1</ApplicationVersion>
