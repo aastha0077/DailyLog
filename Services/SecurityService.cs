@@ -67,27 +67,10 @@ public class SecurityService
         var sanitizedInput = pin?.Trim() ?? "";
         var storedPin = settings.PIN?.Trim() ?? "";
         
-        // Log EVERYTHING to the console
-        Console.WriteLine($"[PIN_SYSTEM] VERIFYING...");
-        Console.WriteLine($"[PIN_SYSTEM] Stored: '{storedPin}'");
-        Console.WriteLine($"[PIN_SYSTEM] Input:  '{sanitizedInput}'");
-        Console.WriteLine($"[PIN_SYSTEM] IsProtected: {settings.IsProtected}");
+        if (!settings.IsProtected) return true;
+        if (string.IsNullOrEmpty(sanitizedInput)) return false;
         
-        if (!settings.IsProtected) 
-        {
-            Console.WriteLine("[PIN_SYSTEM] Protection is OFF - bypass login");
-            return true;
-        }
-
-        if (string.IsNullOrEmpty(sanitizedInput)) 
-        {
-            Console.WriteLine("[PIN_SYSTEM] Input is EMPTY - fail");
-            return false;
-        }
-        
-        bool isMatch = storedPin == sanitizedInput;
-        Console.WriteLine($"[PIN_SYSTEM] MATCH RESULT: {isMatch}");
-        return isMatch;
+        return storedPin == sanitizedInput;
     }
 
     public async Task SetPINAsync(string pin)

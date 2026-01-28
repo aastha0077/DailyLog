@@ -1,15 +1,19 @@
-<div class="p-4 bg-white border-bottom">
+@inject NavigationManager NavigationManager
+@inject SecurityService SecurityService
+@inject IJSRuntime JSRuntime
+
+<div class="p-4 h-100 d-flex flex-column">
     <div class="d-flex align-items-center mb-4">
-        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
-            <i class="bi bi-journal-bookmark-fill text-white fs-4"></i>
+        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 42px; height: 42px;">
+            <i class="bi bi-journal-bookmark-fill text-white fs-5"></i>
         </div>
         <div>
-            <h5 class="mb-0 fw-bold text-dark">Daily Log</h5>
+            <h6 class="mb-0 fw-bold">Daily Log</h6>
             <small class="text-muted">Personal Daily Log</small>
         </div>
     </div>
 
-    <nav class="nav nav-pills flex-column gap-2">
+    <nav class="nav nav-pills flex-column gap-2 flex-grow-1">
         <a class="nav-link d-flex align-items-center @GetActiveClass("/dashboard")" href="/dashboard">
             <i class="bi bi-speedometer2 me-3 fs-5"></i>
             <span class="fw-medium">Dashboard</span>
@@ -25,7 +29,7 @@
             <span class="fw-medium">Timeline</span>
         </a>
 
-        <a class="nav-link d-flex align-items-center @GetActiveClass("/calendar")" href="/calendar">
+        <a class="nav-link d-flex align-items-center @GetActiveClass("/calendar")" href="/calendar" style="display: none !important;">
             <i class="bi bi-calendar-date me-3 fs-5"></i>
             <span class="fw-medium">Calendar</span>
         </a>
@@ -35,24 +39,25 @@
             <span class="fw-medium">Search</span>
         </a>
 
-        <hr class="my-3">
+        <div class="mt-auto pt-3 border-top">
+            <a class="nav-link d-flex align-items-center @GetActiveClass("/settings")" href="/settings">
+                <i class="bi bi-gear me-3 fs-5"></i>
+                <span class="fw-medium">Settings</span>
+            </a>
 
-        <a class="nav-link d-flex align-items-center @GetActiveClass("/settings")" href="/settings">
-            <i class="bi bi-gear me-3 fs-5"></i>
-            <span class="fw-medium">Settings</span>
-        </a>
-
-        <button class="nav-link d-flex align-items-center text-danger border-0 bg-transparent mt-auto" @onclick="HandleLogout">
-            <i class="bi bi-box-arrow-right me-3 fs-5"></i>
-            <span class="fw-medium">Logout</span>
-        </button>
+            <button class="nav-link d-flex align-items-center text-danger border-0 bg-transparent w-100" @onclick="HandleLogout">
+                <i class="bi bi-box-arrow-right me-3 fs-5"></i>
+                <span class="fw-medium">Logout</span>
+            </button>
+        </div>
     </nav>
 </div>
 
-@inject NavigationManager NavigationManager
-@inject SecurityService SecurityService
-
 @code {
+    protected override async Task OnInitializedAsync()
+    {
+    }
+
     private string GetActiveClass(string href)
     {
         return NavigationManager.Uri.Contains(href) ? "active bg-primary text-white" : "text-dark";

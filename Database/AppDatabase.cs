@@ -37,8 +37,6 @@ public class AppDatabase
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"ERROR creating database connection: {ex.Message}");
-                    Console.WriteLine($"Stack trace: {ex.StackTrace}");
                     throw new Exception($"Failed to create database connection: {ex.Message}", ex);
                 }
             }
@@ -99,15 +97,10 @@ public class AppDatabase
             _isInitialized = true;
             Debug.WriteLine("Database initialization completed successfully");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Debug.WriteLine($"Database initialization error: {ex.Message}");
-            Debug.WriteLine($"Stack trace: {ex.StackTrace}");
-
-            // If there's an error, try to delete the database and start fresh
             try
             {
-                Debug.WriteLine("Attempting database recreation...");
                 await Connection.CloseAsync();
                 _connection = null;
 
@@ -115,27 +108,17 @@ public class AppDatabase
                 if (File.Exists(databasePath))
                 {
                     File.Delete(databasePath);
-                    Debug.WriteLine("Database file deleted, will recreate on next run");
                 }
 
-                // Reinitialize with a fresh database
-                var newConn = Connection; // This will recreate the connection
                 await Connection.CreateTableAsync<Mood>();
                 await Connection.CreateTableAsync<UserSettings>();
                 await Connection.CreateTableAsync<JournalEntry>();
                 await SeedMoodsAsync();
-                await Connection.InsertAsync(new UserSettings
-                {
-                    IsProtected = false,
-                    Theme = "Light"
-                });
-                Debug.WriteLine("Database recreated successfully");
+                await Connection.InsertAsync(new UserSettings { IsProtected = false, Theme = "Light" });
                 _isInitialized = true;
             }
-            catch (Exception retryEx)
+            catch (Exception)
             {
-                Debug.WriteLine($"Database recreation failed: {retryEx.Message}");
-                Debug.WriteLine($"Recreation stack trace: {retryEx.StackTrace}");
                 throw;
             }
         }
@@ -160,43 +143,32 @@ public class AppDatabase
         {
             try
             {
-                // Try to create the table if it doesn't exist, or update schema if it does (additive)
                 await Connection.CreateTableAsync<UserSettings>();
-                
-                // Get current columns to verify migration
                 var columns = await Connection.GetTableInfoAsync("UserSettings");
                 var columnNames = columns.Select(c => c.Name).ToList();
                 
-                Debug.WriteLine($"UserSettings table schema check. Columns: {string.Join(", ", columnNames)}");
-
-                // Check for specific columns and add them if missing (as a fallback if CreateTableAsync didn't add them)
                 if (!columnNames.Contains("IsProtected"))
                 {
-                    Debug.WriteLine("Adding missing IsProtected column to UserSettings");
                     await Connection.ExecuteAsync("ALTER TABLE UserSettings ADD COLUMN IsProtected INTEGER NOT NULL DEFAULT 0");
                 }
                 
                 if (!columnNames.Contains("PIN"))
                 {
-                    Debug.WriteLine("Adding missing PIN column to UserSettings");
                     await Connection.ExecuteAsync("ALTER TABLE UserSettings ADD COLUMN PIN TEXT DEFAULT ''");
                 }
 
                 if (!columnNames.Contains("Theme"))
                 {
-                    Debug.WriteLine("Adding missing Theme column to UserSettings");
                     await Connection.ExecuteAsync("ALTER TABLE UserSettings ADD COLUMN Theme TEXT NOT NULL DEFAULT 'Light'");
                 }
 
                 if (!columnNames.Contains("LastLogin"))
                 {
-                    Debug.WriteLine("Adding missing LastLogin column to UserSettings");
                     await Connection.ExecuteAsync("ALTER TABLE UserSettings ADD COLUMN LastLogin TEXT");
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.WriteLine($"Migration failed: {ex.Message}");
                 throw;
             }
         }

@@ -12,41 +12,28 @@ public class MoodService : BaseService
     
     public async Task<List<Mood>> GetAllMoodsAsync()
     {
-        return await ExecuteWithRetryAsync(async () =>
-        {
-            if (!await IsDatabaseReadyAsync())
-                return new List<Mood>();
-                
-            return await _database.Connection.Table<Mood>()
-                .OrderBy(m => m.Category)
-                .ThenBy(m => m.MoodType)
-                .ToListAsync();
-        });
+        if (!await IsDatabaseReadyAsync()) return new List<Mood>();
+            
+        return await _database.Connection.Table<Mood>()
+            .OrderBy(m => m.Category)
+            .ThenBy(m => m.MoodType)
+            .ToListAsync();
     }
     
     public async Task<List<Mood>> GetMoodsByCategoryAsync(MoodCategory category)
     {
-        return await ExecuteWithRetryAsync(async () =>
-        {
-            if (!await IsDatabaseReadyAsync())
-                return new List<Mood>();
-                
-            return await _database.Connection.Table<Mood>()
-                .Where(m => m.Category == category)
-                .OrderBy(m => m.MoodType)
-                .ToListAsync();
-        });
+        if (!await IsDatabaseReadyAsync()) return new List<Mood>();
+            
+        return await _database.Connection.Table<Mood>()
+            .Where(m => m.Category == category)
+            .OrderBy(m => m.MoodType)
+            .ToListAsync();
     }
     
     public async Task<Mood?> GetMoodByIdAsync(int id)
     {
-        return await ExecuteWithRetryAsync(async () =>
-        {
-            if (!await IsDatabaseReadyAsync())
-                return null;
-                
-            return await _database.Connection.GetAsync<Mood>(id);
-        });
+        if (!await IsDatabaseReadyAsync()) return null;
+        return await _database.Connection.GetAsync<Mood>(id);
     }
 
     public async Task<Dictionary<MoodCategory, List<Mood>>> GetMoodsGroupedByCategoryAsync()
@@ -57,9 +44,8 @@ public class MoodService : BaseService
             return allMoods.GroupBy(m => m.Category)
                            .ToDictionary(g => g.Key, g => g.ToList());
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            LogError("Grouping moods by category", ex);
             return new Dictionary<MoodCategory, List<Mood>>();
         }
     }
