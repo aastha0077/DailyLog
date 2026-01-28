@@ -22,14 +22,12 @@ public class SecurityService
 
         var settings = await GetUserSettingsAsync();
         
-        // If not protected, anyone can log in
         if (!settings.IsProtected) 
         {
             IsAuthenticated = true;
             return true;
         }
 
-        // Compare password (PIN)
         if (settings.PIN == password)
         {
             IsAuthenticated = true;
@@ -67,11 +65,10 @@ public class SecurityService
         var settings = await GetUserSettingsAsync();
         settings.PIN = sanitizedPin;
         settings.IsProtected = true;
-        settings.Id = 1; // Force ID 1
+        settings.Id = 1;
         
         await UpdateUserSettingsAsync(settings);
         
-        // Final sanity check
         var check = await GetUserSettingsAsync();
         Console.WriteLine($"[PIN_SYSTEM] PIN SAVED. Readback - PIN: '{check.PIN}', Protected: {check.IsProtected}");
     }
@@ -86,19 +83,15 @@ public class SecurityService
 
     public async Task<UserSettings> GetUserSettingsAsync()
     {
-
         try 
         {
-            // Count total rows for diagnostics
             int count = await _database.Connection.Table<UserSettings>().CountAsync();
             Console.WriteLine($"[PIN_SYSTEM] Settings table has {count} rows.");
 
-            // Always try to get row ID 1 first
             var settings = await _database.Connection.Table<UserSettings>().Where(x => x.Id == 1).FirstOrDefaultAsync();
             
             if (settings == null)
             {
-                // If ID 1 is missing, try to find ANY existing row
                 settings = await _database.Connection.Table<UserSettings>().FirstOrDefaultAsync();
                 
                 if (settings == null)
@@ -112,7 +105,6 @@ public class SecurityService
                     Console.WriteLine($"[PIN_SYSTEM] Found settings with ID {settings.Id}. Migrating to ID 1.");
                     int oldId = settings.Id;
                     settings.Id = 1;
-                    // Delete old and replace with ID 1
                     await _database.Connection.DeleteAsync<UserSettings>(oldId);
                     await _database.Connection.InsertOrReplaceAsync(settings);
                 }
@@ -130,7 +122,7 @@ public class SecurityService
     {
         try 
         {
-            settings.Id = 1; // Always force ID 1
+            settings.Id = 1;
             await _database.Connection.InsertOrReplaceAsync(settings);
             Console.WriteLine("[PIN_SYSTEM] Database InsertOrReplace executed successfully.");
         }

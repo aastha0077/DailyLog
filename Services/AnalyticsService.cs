@@ -24,77 +24,72 @@ public class AnalyticsService
                 return new StreakInfo();
             }
         
-        var entryDates = entries.Select(e => e.EntryDate.Date).OrderByDescending(d => d).ToList();
-        var today = DateTime.Now.Date;
-        var streakInfo = new StreakInfo();
-        
-        // Calculate current streak
-        var currentStreak = 0;
-        var checkDate = today;
-        
-        while (entryDates.Contains(checkDate))
-        {
-            currentStreak++;
-            checkDate = checkDate.AddDays(-1);
-        }
-        
-        // If there's no entry today, check if yesterday started a streak
-        if (currentStreak == 0 && entryDates.Count > 0)
-        {
-            checkDate = today.AddDays(-1);
+            var entryDates = entries.Select(e => e.EntryDate.Date).OrderByDescending(d => d).ToList();
+            var today = DateTime.Now.Date;
+            var streakInfo = new StreakInfo();
+            
+            var currentStreak = 0;
+            var checkDate = today;
+            
             while (entryDates.Contains(checkDate))
             {
                 currentStreak++;
                 checkDate = checkDate.AddDays(-1);
             }
-        }
-        
-        streakInfo.CurrentStreak = currentStreak;
-        
-        // Calculate longest streak
-        var longestStreak = 0;
-        var tempStreak = 0;
-        var sortedDates = entryDates.OrderBy(d => d).ToList();
-        
-        for (int i = 0; i < sortedDates.Count; i++)
-        {
-            if (i == 0 || sortedDates[i] == sortedDates[i - 1].AddDays(1))
-            {
-                tempStreak++;
-            }
-            else
-            {
-                longestStreak = Math.Max(longestStreak, tempStreak);
-                tempStreak = 1;
-            }
-        }
-        longestStreak = Math.Max(longestStreak, tempStreak);
-        
-        streakInfo.LongestStreak = longestStreak;
-        
-        // Find missed days (gaps in entries)
-        if (entryDates.Count > 0)
-        {
-            var minDate = entryDates.Min();
-            var maxDate = entryDates.Max();
-            var missedDays = new List<DateTime>();
             
-            for (var date = minDate; date <= maxDate; date = date.AddDays(1))
+            if (currentStreak == 0 && entryDates.Count > 0)
             {
-                if (!entryDates.Contains(date))
+                checkDate = today.AddDays(-1);
+                while (entryDates.Contains(checkDate))
                 {
-                    missedDays.Add(date);
+                    currentStreak++;
+                    checkDate = checkDate.AddDays(-1);
                 }
             }
             
-            streakInfo.MissedDays = missedDays;
-        }
+            streakInfo.CurrentStreak = currentStreak;
+            
+            var longestStreak = 0;
+            var tempStreak = 0;
+            var sortedDates = entryDates.OrderBy(d => d).ToList();
+            
+            for (int i = 0; i < sortedDates.Count; i++)
+            {
+                if (i == 0 || sortedDates[i] == sortedDates[i - 1].AddDays(1))
+                {
+                    tempStreak++;
+                }
+                else
+                {
+                    longestStreak = Math.Max(longestStreak, tempStreak);
+                    tempStreak = 1;
+                }
+            }
+            longestStreak = Math.Max(longestStreak, tempStreak);
+            
+            streakInfo.LongestStreak = longestStreak;
+            
+            if (entryDates.Count > 0)
+            {
+                var minDate = entryDates.Min();
+                var maxDate = entryDates.Max();
+                var missedDays = new List<DateTime>();
+                
+                for (var date = minDate; date <= maxDate; date = date.AddDays(1))
+                {
+                    if (!entryDates.Contains(date))
+                    {
+                        missedDays.Add(date);
+                    }
+                }
+                
+                streakInfo.MissedDays = missedDays;
+            }
 
-        return streakInfo;
+            return streakInfo;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.WriteLine($"Error calculating streak info: {ex.Message}");
             return new StreakInfo();
         }
     }
@@ -227,7 +222,6 @@ public class AnalyticsService
             })
             .ToList();
         
-        // Calculate running average
         var runningTotal = 0;
         for (int i = 0; i < trends.Count; i++)
         {

@@ -61,11 +61,9 @@ public class ExportService
                             y += 18;
                         }
 
-                        // Convert markdown to text
                         string contentForPdf = entry.IsMarkdown 
                             ? ConvertMarkdownToPlainText(entry.Content ?? "")
                             : entry.Content ?? "";
-                        
                         
                         var lines = WrapText(contentForPdf, paint, width);
                         foreach (var line in lines)
@@ -110,10 +108,8 @@ public class ExportService
         if (string.IsNullOrEmpty(markdownContent))
             return string.Empty;
             
-        // Convert to HTML
         var html = MyJournals.Utils.StringHelpers.ToHtml(markdownContent);
         
-        // Format HTML tags
         html = System.Text.RegularExpressions.Regex.Replace(html, @"<br\s*/?>", "\n");
         html = System.Text.RegularExpressions.Regex.Replace(html, @"</p>", "\n\n");
         html = System.Text.RegularExpressions.Regex.Replace(html, @"</h[1-6]>", "\n");
@@ -122,16 +118,13 @@ public class ExportService
         html = System.Text.RegularExpressions.Regex.Replace(html, @"</blockquote>", "\n");
         html = System.Text.RegularExpressions.Regex.Replace(html, @"<blockquote>", "\"" );
         
-        // Remove HTML tags
         var plainText = System.Text.RegularExpressions.Regex.Replace(html, "<.*?>", "");
         
         plainText = System.Net.WebUtility.HtmlDecode(plainText);
         
-        // Clean whitespace
         plainText = System.Text.RegularExpressions.Regex.Replace(plainText, @"[ \t]+", " ");
         plainText = System.Text.RegularExpressions.Regex.Replace(plainText, @"\n{3,}", "\n\n");
         
         return plainText.Trim();
     }
-
 }

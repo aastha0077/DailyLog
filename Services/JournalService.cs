@@ -1,7 +1,6 @@
 using MyJournals.Database;
 using MyJournals.Models;
 using MyJournals.Utils;
-using SQLite;
 
 namespace MyJournals.Services;
 
@@ -9,14 +8,10 @@ public class JournalService
 {
     private readonly AppDatabase _database;
 
-    public JournalService(AppDatabase database)
-    {
-        _database = database;
-    }
+    public JournalService(AppDatabase database) => _database = database;
     
     public async Task<JournalEntry?> GetEntryByDateAsync(DateTime date)
     {
-
         var targetDate = date.Date;
         var entries = await _database.Connection.Table<JournalEntry>().ToListAsync();
         return entries.FirstOrDefault(e =>
@@ -25,21 +20,16 @@ public class JournalService
             e.EntryDate.Day == targetDate.Day);
     }
     
-    public async Task<JournalEntry?> GetEntryByIdAsync(int id)
-    {
-        return await _database.Connection.GetAsync<JournalEntry>(id);
-    }
+    public async Task<JournalEntry?> GetEntryByIdAsync(int id) => 
+        await _database.Connection.GetAsync<JournalEntry>(id);
     
-    public async Task<List<JournalEntry>> GetAllEntriesAsync()
-    {
-        return await _database.Connection.Table<JournalEntry>()
+    public async Task<List<JournalEntry>> GetAllEntriesAsync() => 
+        await _database.Connection.Table<JournalEntry>()
             .OrderByDescending(e => e.EntryDate)
             .ToListAsync();
-    }
     
     public async Task<List<JournalEntry>> GetEntriesByDateRangeAsync(DateTime startDate, DateTime endDate)
     {
-
         var entries = await _database.Connection.Table<JournalEntry>().ToListAsync();
         return entries.Where(e => e.EntryDate.Date >= startDate.Date && e.EntryDate.Date <= endDate.Date)
                      .OrderByDescending(e => e.EntryDate)
@@ -48,7 +38,6 @@ public class JournalService
     
     public async Task<JournalEntry> CreateOrUpdateEntryAsync(JournalEntry entry)
     {
-
         entry.UpdatedAt = DateTime.Now;
         entry.WordCount = StringHelpers.CountWords(entry.Content);
 
@@ -69,43 +58,32 @@ public class JournalService
         return entry;
     }
     
-    public async Task DeleteEntryAsync(int id)
-    {
+    public async Task DeleteEntryAsync(int id) => 
         await _database.Connection.DeleteAsync<JournalEntry>(id);
-    }
     
-    public List<string> GetTags(JournalEntry entry)
-    {
-        return StringHelpers.ExtractTags(entry.Tags);
-    }
+    public List<string> GetTags(JournalEntry entry) => 
+        StringHelpers.ExtractTags(entry.Tags);
     
-    public void SetTags(JournalEntry entry, List<string> tags)
-    {
+    public void SetTags(JournalEntry entry, List<string> tags) => 
         entry.Tags = StringHelpers.ConvertTagsToJson(tags?.Distinct().ToList() ?? new List<string>());
-    }
     
     public async Task<List<JournalEntry>> SearchEntriesAsync(string searchTerm, DateTime? startDate = null, DateTime? endDate = null, List<int>? moodIds = null, List<string>? tags = null)
     {
-
         var entries = await GetAllEntriesAsync();
         
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
-            searchTerm = searchTerm.ToLower();
+            var term = searchTerm.ToLower();
             entries = entries.Where(e => 
-                e.Title.ToLower().Contains(searchTerm) || 
-                e.Content.ToLower().Contains(searchTerm)).ToList();
+                e.Title.ToLower().Contains(term) || 
+                e.Content.ToLower().Contains(term)).ToList();
         }
         
         if (startDate.HasValue)
-        {
             entries = entries.Where(e => e.EntryDate.Date >= startDate.Value.Date).ToList();
-        }
         
         if (endDate.HasValue)
-        {
             entries = entries.Where(e => e.EntryDate.Date <= endDate.Value.Date).ToList();
-        }
         
         if (moodIds != null && moodIds.Any())
         {
@@ -128,18 +106,13 @@ public class JournalService
         return entries;
     }
     
-    public async Task<List<JournalEntry>> GetPaginatedEntriesAsync(int page, int pageSize)
-    {
-
-        return await _database.Connection.Table<JournalEntry>()
+    public async Task<List<JournalEntry>> GetPaginatedEntriesAsync(int page, int pageSize) => 
+        await _database.Connection.Table<JournalEntry>()
             .OrderByDescending(e => e.EntryDate)
             .Skip(page * pageSize)
             .Take(pageSize)
             .ToListAsync();
-    }
     
-    public async Task<int> GetTotalEntryCountAsync()
-    {
-        return await _database.Connection.Table<JournalEntry>().CountAsync();
-    }
+    public async Task<int> GetTotalEntryCountAsync() => 
+        await _database.Connection.Table<JournalEntry>().CountAsync();
 }

@@ -31,7 +31,6 @@
         string? redirectTo = null;
         try
         {
-            // Small delay to ensure UI renders
             await Task.Delay(100);
             
             statusMessage = "Setting up database...";
@@ -51,9 +50,8 @@
             }
             else
             {
-                // Auto-login for unprotected journals
                 await SecurityService.LoginAsync("");
-                statusMessage = "Loading dashboard..."; // Added logging for dashboard loading
+                statusMessage = "Loading dashboard...";
                 StateHasChanged();
                 redirectTo = "/dashboard";
             }
@@ -62,7 +60,6 @@
         {
             statusMessage = $"System error: {ex.Message}";
             StateHasChanged();
-            Console.WriteLine($"[STARTUP] Critical Error: {ex.Message}\n{ex.StackTrace}");
         }
 
         if (redirectTo != null)
